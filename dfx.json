@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "opencritique_backend": {
+      "candid": "src/opencritique_backend/opencritique_backend.did",
+      "package": "opencritique_backend",
+      "type": "rust"
+    },
+    "opencritique_frontend": {
+      "dependencies": [
+        "opencritique_backend"
+      ],
+      "source": [
+        "src/opencritique_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "opencritique_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
