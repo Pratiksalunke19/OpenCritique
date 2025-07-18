@@ -1,0 +1,13 @@
+from project root: 
+dfx start --background
+dfx build
+dfx deploy
+
+from frontend:
+npm install @dfinity/agent @dfinity/candid
+
+npm install -D tailwindcss@3 postcss autoprefixer
+
+install font awesome react icons
+
+npm i pinata

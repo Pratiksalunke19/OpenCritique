@@ -1,30 +1,39 @@
-import { useState } from 'react';
-import { opencritique_backend } from 'declarations/opencritique_backend';
+import { useState, useEffect } from "react";
+import { uploadArt, getArtworks } from "./services/opencritique";
+import Navbar from "./components/Navbar";
+import Welcome from "./components/Welcome";
+import Footer from "./components/Footer";
 
 function App() {
-  const [greeting, setGreeting] = useState('');
+  // const [title, setTitle] = useState("");
+  // const [desc, setDesc] = useState("");
+  // const [url, setUrl] = useState("");
+  // const [artworks, setArtworks] = useState([]);
+  
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   await uploadArt(title, desc, url);
+  //   setTitle("");
+  //   setDesc("");
+  //   setUrl("");
+  //   fetchArtworks();
+  // };
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    const name = event.target.elements.name.value;
-    opencritique_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
-  }
+  // const fetchArtworks = async () => {
+  //   const data = await getArtworks();
+  //   setArtworks(data);
+  // };
+
+  // useEffect(() => {
+  //   fetchArtworks();
+  // }, []);
 
   return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
+    <div className="bg-bg-base min-h-screen text-text-base">
+      <Navbar />
+      <Welcome />
+      <Footer />
+    </div>
   );
 }
 
