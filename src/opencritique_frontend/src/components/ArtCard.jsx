@@ -6,6 +6,7 @@ const ArtCard = ({ imageSrc, username }) => {
     <div className="relative group w-full aspect-[3/4] overflow-hidden rounded-lg bg-bg-panel shadow hover:scale-105 transition-transform duration-300">
       <img
         src={imageSrc}
+        loading='lazy'
         alt="art"
         className="object-cover w-full h-full"
       />
