@@ -1,12 +1,20 @@
 // src/components/ArtCard.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const ArtCard = ({ imageSrc, username }) => {
+const ArtCard = ({ imageSrc, username, id }) => {
+
+  const navigate = useNavigate();
+
+  const handleClick = () =>{
+    navigate(`/art/${id}`)
+  };
+
   return (
-    <div className="relative group w-full aspect-[3/4] overflow-hidden rounded-lg bg-bg-panel shadow hover:scale-105 transition-transform duration-300">
+    <div className="relative group w-full aspect-[3/4] overflow-hidden rounded-lg bg-bg-panel shadow hover:scale-105 transition-transform duration-300" onClick={handleClick}>
       <img
         src={imageSrc}
-        loading='lazy'
+        loading="lazy"
         alt="art"
         className="object-cover w-full h-full"
       />

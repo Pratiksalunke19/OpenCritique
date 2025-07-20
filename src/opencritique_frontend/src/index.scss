@@ -5,3 +5,16 @@
 body {
   @apply bg-bg-base text-text-base;
 }
+
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./assets/fonts/DM-Sans.woff2') format('woff2');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('./assets/fonts/Bebas-Neue.woff2') format('woff2');
+  font-weight: 400;
+}

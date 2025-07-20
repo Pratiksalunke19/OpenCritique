@@ -2,9 +2,23 @@
 import React from "react";
 import ArtCard from "./ArtCard";
 import artData from "../images_cid";
+import { useArt } from "../context/ArtContext";
+import { useEffect } from "react";
 
 const Welcome = () => {
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
+
+  // const { artData, setArtData } = useArt();
+
+  // useEffect(() => {
+  //   const fetchArt = async () => {
+  //     const res = await fetch("/api/arts"); // or ICP call
+  //     const data = await res.json();
+  //     setArtData(data);
+  //   };
+
+  //   if (artData.length === 0) fetchArt(); // don’t refetch if already loaded
+  // }, []);
 
   return (
     <div className="p-6">
@@ -13,6 +27,7 @@ const Welcome = () => {
         {artData.map((art, index) => (
           <ArtCard
             key={index}
+            id={index}
             imageSrc={`${ipfsBase}${art.cid}`}
             username={art.username}
           />

@@ -14,7 +14,7 @@ const Navbar = () => {
     };
 
     checkConnection();
-  }, [connect]);
+  }, []);
 
   const handleConnect = async () => {
     const hasAllowed = await window.ic.plug.requestConnect();
