@@ -31,10 +31,14 @@ const Navbar = () => {
     navigate("/upload");
   };
 
+  const navigateHome = async () =>{
+    navigate("/");
+  }
+
   return (
     <nav className="bg-bg-panel text-text-base flex items-center justify-between px-6 py-4 border-b border-border shadow-md rounded-xl mx-4 mt-4">
       {/* Left Section: Logo + Brand */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 cursor-pointer" onClick={navigateHome}>
         <div className="w-6 h-6 bg-primary rounded-full"></div>
         <span className="text-lg font-semibold">OpenCritique</span>
       </div>

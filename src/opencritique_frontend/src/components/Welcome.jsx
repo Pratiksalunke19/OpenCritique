@@ -1,23 +1,11 @@
 import React, { useEffect, useState } from "react";
 import ArtCard from "./ArtCard";
-import { opencritique_backend } from "../../../declarations/opencritique_backend";
+import { useArtContext } from "./context/ArtContext";
 
 const Welcome = () => {
-  const [artworks, setArtworks] = useState([]);
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
 
-  useEffect(() => {
-    const fetchArtworks = async () => {
-      try {
-        const arts = await opencritique_backend.get_artworks();
-        setArtworks(arts);
-      } catch (error) {
-        console.error("Failed to fetch artworks:", error);
-      }
-    };
-
-    fetchArtworks();
-  }, []);
+  const { artworks } = useArtContext();
 
   return (
     <div className="p-6">
@@ -27,7 +15,7 @@ const Welcome = () => {
           <ArtCard
             key={index}
             id={art.id}
-            imageSrc={`${ipfsBase}${art.image_url}`} // image_url = cid
+            imageSrc={`${ipfsBase}${art.image_url}`} 
             username={art.username}
           />
         ))}

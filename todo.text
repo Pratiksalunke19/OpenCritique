@@ -1,7 +1,14 @@
 switch theme button (light and dark)
 implement the image upload to pinata ( also use compression mechanism before uploading )
 create landing page ( use reactbits website )
-fix image loading problem
+create logo
+add loading circle instead of art not found in ArtCardDetail.jsx
+stay anonymous feature for artists
+
+less imp bugs:
+    - plug pops up multiple times
+    - artdetail page when loaded always scrolled downwards
 
 Done: 
 connect with wallet 
+fix image loading problem
