@@ -6,7 +6,6 @@ import Footer from "./components/Footer";
 import Upload  from "./components/Upload";
 import { PinataSDK } from "pinata";
 import { Routes,Route } from "react-router-dom";
-import ArtworkDetail from "./components/ArtworkDetail";
 
 // const pinata = new PinataSDK({
 //   pinataJWTKey: import.meta.env.VITE_PINATA_JWT,
@@ -77,7 +76,6 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome/>}/>
         <Route path="/upload" element={<Upload/>}/>
-        <Route path="/art/:id" element={<ArtworkDetail />} />
       </Routes>
     <Footer/>
     </div>

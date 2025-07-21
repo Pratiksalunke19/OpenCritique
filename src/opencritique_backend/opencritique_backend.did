@@ -1,3 +1,34 @@
-service : {
-    "greet": (text) -> (text) query;
+type Critique = record {
+  id: nat64;
+  art_id: nat64;
+  critic: principal;
+  text: text;
+  upvotes: nat64;
+  upvoters: vec principal;
+};
+
+type Artwork = record {
+  id: nat64;
+  title: text;
+  description: text;
+  image_url: text;
+  author: principal;
+  username: text;
+  email: text;
+  tags: vec text;
+  feedback_bounty: nat64;
+  license: text;
+  critiques: vec Critique;
+};
+
+service: {
+  upload_art: (text, text, text, text, text, vec text, nat64, text) -> ();
+  post_critique: (nat64, text) -> ();
+  upvote_critique: (nat64, nat64) -> ();
+  get_artworks: () -> (vec Artwork) query;
+  get_critiques: (nat64) -> (vec Critique) query;
+  get_critiques_sorted: (nat64) -> (vec Critique) query;
+  get_critiques_for_user: (principal) -> (vec Critique) query;
+  get_points: (principal) -> (nat64) query;
+  delete_artwork: (nat64) -> (variant { ok: text; err: text });
 }
