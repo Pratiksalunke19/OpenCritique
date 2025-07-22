@@ -3,10 +3,14 @@ import { uploadArt, getArtworks } from "./services/opencritique";
 import Navbar from "./components/Navbar";
 import Welcome from "./components/Welcome";
 import Footer from "./components/Footer";
-import Upload  from "./components/Upload";
+import UploadForm  from "./components/UploadForm";
 import { PinataSDK } from "pinata";
 import { Routes,Route } from "react-router-dom";
 import ArtCardDetail from "./components/ArtCardDetail";
+import LandingPage from "./pages/LandingPage";
+import Aurora from "./components/Aurora/Aurora";
+import MyStudio from "./components/MyStudio";
+import MarketPlace from "./components/MarketPlace";
 
 // const pinata = new PinataSDK({
 //   pinataJWTKey: import.meta.env.VITE_PINATA_JWT,
@@ -57,27 +61,15 @@ function App() {
 
   return (
     <div className="bg-bg-base min-h-screen text-text-base">
-      {/* <h1>Vite + React + Pinata</h1>
-      <div className="card">
-        <input type="file" onChange={handleFileChange} />
-        <button onClick={handleUpload} disabled={!file}>
-          Upload to Pinata
-        </button>
-        {uploadStatus && <p>{uploadStatus}</p>}
-        {link && (
-          <a href={link} target="_blank">
-            View File
-          </a>
-        )}
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p> */}
+      <Aurora amplitude={3}/>
       <Navbar/>
       <Routes>
-        <Route path="/" element={<Welcome/>}/>
-        <Route path="/upload" element={<Upload/>}/>
+        <Route path="/" element={<LandingPage/>}/>
+        <Route path="/trending" element={<Welcome/>}/>
+        <Route path="/upload" element={<UploadForm/>}/>
         <Route path="/art/:id" element={<ArtCardDetail />} />
+        <Route path="/mystudio" element={<MyStudio/>}/>
+        <Route path="/marketplace" element={<MarketPlace/>}/>
       </Routes>
     <Footer/>
     </div>

@@ -8,26 +8,25 @@ export const ArtProvider = ({ children }) => {
   const [artworks, setArtworks] = useState([]);
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
 
-  useEffect(() => {
-    const fetchArtworks = async () => {
-      try {
-        const arts = await opencritique_backend.get_artworks();
-        // Attach IPFS imageSrc here so it's always ready
-        const updatedArts = arts.map((art) => ({
-          ...art,
-          imageSrc: `${ipfsBase}${art.image_url}`,
-        }));
-        setArtworks(updatedArts);
-      } catch (error) {
-        console.error("Failed to fetch artworks:", error);
-      }
-    };
+  const fetchArtworks = async () => {
+    try {
+      const arts = await opencritique_backend.get_artworks();
+      const updatedArts = arts.map((art) => ({
+        ...art,
+        imageSrc: `${ipfsBase}${art.image_url}`,
+      }));
+      setArtworks(updatedArts);
+    } catch (error) {
+      console.error("Failed to fetch artworks:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchArtworks();
   }, []);
 
   return (
-    <ArtContext.Provider value={{ artworks }}>
+    <ArtContext.Provider value={{ artworks, fetchArtworks }}>
       {children}
     </ArtContext.Provider>
   );

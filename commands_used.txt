@@ -17,3 +17,7 @@ install typescript:
 npm install --save-dev typescript @types/react @types/react-dom
 
 npm install react-router-dom
+
+npx jsrepo add https://reactbits.dev/tailwind/Backgrounds/Aurora
+
+npm i lucide-react

@@ -9,8 +9,8 @@ const Welcome = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-primary mb-6">Discover Art</h2>
-      <div className="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 lg:px-20 m-10">
+      {/* <h2 className="text-2xl font-bold text-primary mb-6">Discover Art</h2> */}
+      <div className="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-10 lg:px-20 m-10">
         {artworks.map((art, index) => (
           <ArtCard
             key={index}

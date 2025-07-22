@@ -1,5 +1,6 @@
-import { React, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Aurora from "./Aurora/Aurora";
 
 const Navbar = () => {
   const [connect, updateConnect] = useState(false);
@@ -27,41 +28,35 @@ const Navbar = () => {
     }
   };
 
-  const handleUploadClick = async () => {
+  const handleUploadClick = () => {
     navigate("/upload");
   };
 
-  const navigateHome = async () =>{
+  const navigateHome = () => {
     navigate("/");
-  }
+  };
 
   return (
-    <nav className="bg-bg-panel text-text-base flex items-center justify-between px-6 py-4 border-b border-border shadow-md rounded-xl mx-4 mt-4">
-      {/* Left Section: Logo + Brand */}
+  <div className="relative">
+
+    <nav className="fixed top-4 left-4 right-4 z-10 bg-bg-panel bg-opacity-70 backdrop-blur-md text-text-base flex items-center justify-between px-6 py-4 border-b border-border shadow-md rounded-xl ">
+      {/* Logo */}
       <div className="flex items-center space-x-2 cursor-pointer" onClick={navigateHome}>
         <div className="w-6 h-6 bg-primary rounded-full"></div>
         <span className="text-lg font-semibold">OpenCritique</span>
       </div>
 
-      {/* Center Navigation Links */}
+      {/* Center Nav Links */}
       <div className="space-x-8 hidden md:flex">
-        <a href="#" className="hover:text-primary transition-colors">
-          Home
-        </a>
-        <a href="#" className="hover:text-primary transition-colors">
-          Trending
-        </a>
-        <a href="#" className="hover:text-primary transition-colors">
-          Marketplace
-        </a>
+        <a href="/" className="hover:text-primary transition-colors">Home</a>
+        <a href="/trending" className="hover:text-primary transition-colors">Trending</a>
+        <a href="marketplace" className="hover:text-primary transition-colors">Marketplace</a>
         {connect && (
-          <a href="#" className="hover:text-primary transition-colors">
-            My Studio
-          </a>
+          <a href="/mystudio" className="hover:text-primary transition-colors">My Studio</a>
         )}
       </div>
 
-      {/* Right Section: Connect Button */}
+      {/* Right Button */}
       <div>
         {connect ? (
           <button
@@ -80,7 +75,8 @@ const Navbar = () => {
         )}
       </div>
     </nav>
-  );
+  </div>
+);
 };
 
 export default Navbar;
