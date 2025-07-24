@@ -1,0 +1,40 @@
+
+.gooey-nav-container.simple-nav {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.gooey-nav-container.simple-nav ul {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.gooey-nav-container.simple-nav li {
+  position: relative;
+  z-index: 2;
+}
+.gooey-nav-container.simple-nav li a {
+  display: block;
+  padding: 0.5rem 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s, border-bottom 0.2s;
+  border-bottom: 2px solid transparent;
+  box-shadow: none;
+}
+.gooey-nav-container.simple-nav li.active a,
+.gooey-nav-container.simple-nav li a:focus {
+  color: #ff9100;
+  border-bottom: 2px solid #ff9100;
+  outline: none;
+}
+.gooey-nav-container.simple-nav li:not(.active) a:hover {
+  border-bottom: 2px solid #ff9100;
+  color: #ffd699;
+}

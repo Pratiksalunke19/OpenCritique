@@ -21,3 +21,7 @@ npm install react-router-dom
 npx jsrepo add https://reactbits.dev/tailwind/Backgrounds/Aurora
 
 npm i lucide-react
+
+npm install gsap
+
+npm install framer-motion
