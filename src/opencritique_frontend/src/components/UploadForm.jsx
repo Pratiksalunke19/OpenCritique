@@ -40,7 +40,7 @@ const UploadForm = () => {
 
       // 2. Call canister function
       const principal = formData.anonymous ? null : window.ic.plug.principalId; // or use caller()
-      await window.opencritique_backend.upload_art(
+      await opencritique_backend.upload_art(
         formData.title.trim(),
         formData.description.trim(),
         cid, // image_url (CID only)

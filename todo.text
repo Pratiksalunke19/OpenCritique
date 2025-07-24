@@ -1,7 +1,6 @@
 todo 
 upload on ICP : tomorrow
 create logo : Atharva
-add README.md : Pratik
 create my studio page : Pratik
 limit load size on trending page : tomorrow
 handle landing page (only show when not connected with wallet) : tomorrow
@@ -15,7 +14,14 @@ change background
 add font theme
 change navbar : no need
 add scroll animation for landing page
+please download plug ( on connect wallet )
+can we do multiple wallet access
+what is the canister request we are asking for
+add load state in My Studio
+once on chain upload so many images for demo
+update README.md : Pratik
 
+switch tabs to button to make phone friendly ( on LandingPage.jsx )
 switch theme button (light and dark) 
 make pinata storage private
 upvote feature for critiques
@@ -32,3 +38,4 @@ bugs:
     - plug pops up multiple times
     - artdetail page when loaded always scrolled downwards
     - feedback bounty cannot set to float value
+    - MyStudio slow loading
