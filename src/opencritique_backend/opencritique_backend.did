@@ -31,4 +31,5 @@ service: {
   get_critiques_for_user: (principal) -> (vec Critique) query;
   get_points: (principal) -> (nat64) query;
   delete_artwork: (nat64) -> (variant { ok: text; err: text });
+  get_my_artworks: () -> (vec Artwork);
 }

@@ -189,3 +189,15 @@ fn delete_artwork(art_id: u64) -> Result<String, String> {
         }
     })
 }
+
+#[query]
+fn get_my_artworks() -> Vec<Artwork> {
+    let my_id = caller();
+    ARTWORKS.with(|arts| {
+        arts.borrow()
+            .iter()
+            .filter(|a| a.author == my_id)
+            .cloned()
+            .collect()
+    })
+}

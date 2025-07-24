@@ -17,6 +17,7 @@ const Welcome = () => {
             id={art.id}
             imageSrc={`${ipfsBase}${art.image_url}`} 
             username={art.username}
+            title={art.title}
           />
         ))}
       </div>
