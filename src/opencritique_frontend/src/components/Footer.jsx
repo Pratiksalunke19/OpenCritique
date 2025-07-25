@@ -9,7 +9,7 @@ const Footer = () => {
           {/* Logo Left */}
           <div className="text-left w-full md:w-auto mb-4 md:mb-0 flex-shrink-0">
             <h2 className="text-white text-4xl font-bold mb-1">OpenCritique</h2>
-            <p className="text-xs">A Decentralized Art Feedback DAO</p>
+            <p className="text-xs">An Art Feedback DAO</p>
           </div>
 
           {/* Contact Us Right */}

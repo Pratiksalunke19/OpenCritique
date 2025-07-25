@@ -35,6 +35,7 @@ connect with wallet
 fix image loading problem
 
 bugs:
+    - urls should not be active when not connected
     - plug pops up multiple times
     - artdetail page when loaded always scrolled downwards
     - feedback bounty cannot set to float value

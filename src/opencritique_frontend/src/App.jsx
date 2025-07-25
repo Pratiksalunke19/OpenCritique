@@ -11,54 +11,12 @@ import LandingPage from "./pages/LandingPage";
 import Aurora from "./components/Aurora/Aurora";
 import MyStudio from "./components/MyStudio";
 import MarketPlace from "./components/MarketPlace";
-
-// const pinata = new PinataSDK({
-//   pinataJWTKey: import.meta.env.VITE_PINATA_JWT,
-//   pinataGateway: import.meta.env.VITE_GATEWAY_URL,
-// });
+import Dashboard from "./components/Dashboard";
+import { useUserContext } from "./components/context/UserContext";
 
 function App() {
 
-  // Commented upload utility
-
-  // const [file, setFile] = useState(null);
-  // const [uploadStatus, setUploadStatus] = useState("");
-  // const [link, setLink] = useState("");
-
-  // const handleFileChange = (e) => {
-  //   if (e.target.files && e.target.files.length > 0) {
-  //     setFile(e.target.files[0]);
-  //   }
-  // };
-
-  // const handleUpload = async () => {
-
-  //   console.log("Pinata JWT", import.meta.env.VITE_PINATA_JWT);
-
-  //   if (!file) return;
-
-  //   setUploadStatus("Uploading to Pinata...");
-
-  //   try {
-  //     const uploadResult = await pinata.upload.public.file(file);
-
-  //     console.log("Upload result:", uploadResult);
-
-  //     if (uploadResult && uploadResult.cid) {
-  //       const ipfsLink = `${import.meta.env.VITE_GATEWAY_URL}/ipfs/${
-  //         uploadResult.cid
-  //       }`;
-  //       setLink(ipfsLink);
-  //       setUploadStatus("Upload successful!");
-  //     } else {
-  //       setUploadStatus("Upload failed");
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     setUploadStatus("Error uploading: " + (error.message || "Unknown error"));
-  //   }
-  // };
-
+  const { isConnected } = useUserContext();
   // Scroll to top button state
   const [showScroll, setShowScroll] = useState(false);
 
@@ -83,7 +41,8 @@ function App() {
       </div>
       <div className="flex-grow">
         <Routes>
-          <Route path="/" element={<LandingPage/>}/>
+          {/* <Route path="/" element={ <Dashboard/>}/> */}
+          <Route path="/" element={isConnected ? <Dashboard/> : <LandingPage/>}/>
           <Route path="/trending" element={<Welcome/>}/>
           <Route path="/upload" element={<UploadForm/>}/>
           <Route path="/art/:id" element={<ArtCardDetail />} />
@@ -97,7 +56,7 @@ function App() {
       {showScroll && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-all flex items-center justify-center"
+          className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary-hover text-white p-3 rounded-full shadow-lg transition-all flex items-center justify-center"
           aria-label="Scroll to top"
         >
           {/* Upward arrow SVG icon */}

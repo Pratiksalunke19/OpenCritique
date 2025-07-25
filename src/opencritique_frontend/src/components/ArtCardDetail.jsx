@@ -69,7 +69,7 @@ const ArtCardDetail = () => {
   } = artwork;
 
   return (
-    <div className="min-h-screen p-10 flex flex-col md:flex-col items-center justify-center bg-[#0f172a] text-white ">
+    <div className="min-h-screen p-10 flex flex-col md:flex-col items-center justify-center bg-[#0f172a] text-white mt-[70px]">
       <div className="w-full flex">
         {/* Left side: Artwork Image */}
         <div className="w-full md:w-1/2 p-4">
@@ -161,20 +161,26 @@ const ArtCardDetail = () => {
       {/* Critique List */}
       <div className="mt-8 w-full ">
         <h3 className="text-2xl text-primary mb-4">Community Critiques</h3>
-        {critiques.map((crit) => (
-          <div
-            key={crit.id}
-            className="bg-[#1e293b] p-4 my-2 rounded-lg flex justify-between items-center"
-          >
-            <p>{crit.text}</p>
-            <button
-              onClick={() => handleUpvote(crit.id)}
-              className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded"
+        {critiques[0] ? (
+          critiques.map((crit) => (
+            <div
+              key={crit.id}
+              className="bg-[#1e293b] p-4 my-2 rounded-lg flex justify-between items-center"
             >
-              👍 {crit.upvotes}
-            </button>
+              <p>{crit.text}</p>
+              <button
+                onClick={() => handleUpvote(crit.id)}
+                className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded"
+              >
+                👍 {crit.upvotes}
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="flex justify-start items-center">
+            <p className="text-gray-500 text-lg">No critiques yet!</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

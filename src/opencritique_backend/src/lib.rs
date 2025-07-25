@@ -7,6 +7,12 @@ use serde::{Deserialize, Serialize};
 
 const ADMIN: &str = "aaaaa-aa"; 
 
+#[derive(CandidType, Serialize, Deserialize, Debug)]
+enum ResultText {
+    Ok(String),
+    Err(String),
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 struct Artwork {
     id: u64,
@@ -169,7 +175,7 @@ fn get_critiques_sorted(art_id: u64) -> Vec<Critique> {
 }
 
 #[update]
-fn delete_artwork(art_id: u64) -> Result<String, String> {
+fn delete_artwork(art_id: u64) -> ResultText{
     let caller_id = caller();
 
     ARTWORKS.with(|arts| {
@@ -180,15 +186,16 @@ fn delete_artwork(art_id: u64) -> Result<String, String> {
 
             if caller_id == artwork.author || caller_id == admin_principal {
                 artworks.remove(index);
-                Ok(format!("Artwork {} deleted.", art_id))
+                ResultText::Ok(format!("Artwork {} deleted.", art_id))
             } else {
-                Err("Unauthorized: Only author or admin can delete this artwork.".to_string())
+                ResultText::Err("Unauthorized: Only author or admin can delete this artwork.".to_string())
             }
         } else {
-            Err("Artwork not found.".to_string())
+            ResultText::Err("Artwork not found.".to_string())
         }
     })
 }
+
 
 #[query]
 fn get_my_artworks() -> Vec<Artwork> {

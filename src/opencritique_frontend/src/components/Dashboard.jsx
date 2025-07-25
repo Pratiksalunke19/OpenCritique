@@ -63,7 +63,7 @@ const [connect, updateConnect] = useState(false);
           </p>
         ) : (
           <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {myArtworks.slice(0, 2).map((art, index) => (
+            {myArtworks.slice(-2).map((art, index) => (
               <DashboardArtCard
                 key={index}
                 imageSrc={art.imageSrc}

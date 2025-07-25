@@ -11,7 +11,7 @@ const ArtCard = ({ imageSrc, username, id, title }) => {
   };
 
   return (
-    <div className="relative group w-full aspect-[3/4] overflow-hidden rounded-lg bg-bg-panel shadow hover:scale-105 transition-transform duration-300 cursor-pointer" onClick={handleClick}>
+    <div className="relative group w-full aspect-[3/4] overflow-hidden rounded-lg bg-bg-panel hover:ring-2 hover:ring transition-all duration-300 hover:scale-105 transition-transform duration-300 cursor-pointer" onClick={handleClick}>
       <img
         src={imageSrc}
         loading="lazy"

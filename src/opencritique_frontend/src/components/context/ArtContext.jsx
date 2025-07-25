@@ -6,6 +6,8 @@ const ArtContext = createContext();
 
 export const ArtProvider = ({ children }) => {
   const [artworks, setArtworks] = useState([]);
+  const [myArtworks, setMyArtworks] = useState([]);
+  const [loadingMyArts, setLoadingMyArts] = useState(true);
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
 
   const fetchArtworks = async () => {
@@ -21,12 +23,33 @@ export const ArtProvider = ({ children }) => {
     }
   };
 
+const fetchMyArtworks = async () => {
+  if (myArtworks.length > 0) return;
+  try {
+    setLoadingMyArts(true);
+    const data = await opencritique_backend.get_my_artworks();
+    const updated = data.map((art) => ({
+      ...art,
+      imageSrc: `${ipfsBase}${art.image_url}`,
+    }));
+    setMyArtworks(updated);
+  } catch (error) {
+    console.error("Failed to fetch user artworks:", error);
+  } finally {
+    setLoadingMyArts(false);
+  }
+};
+
   useEffect(() => {
     fetchArtworks();
+    // fetchMyArtworks();
   }, []);
 
   return (
-    <ArtContext.Provider value={{ artworks, fetchArtworks }}>
+    // <ArtContext.Provider value={{ artworks, fetchArtworks }}>
+    //   {children}
+    // </ArtContext.Provider>
+    <ArtContext.Provider value={{ artworks, fetchArtworks,myArtworks,fetchMyArtworks,loadingMyArts }}>
       {children}
     </ArtContext.Provider>
   );
