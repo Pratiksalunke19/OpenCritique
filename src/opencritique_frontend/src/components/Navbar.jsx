@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 
 
 import Aurora from "./Aurora/Aurora";
-import openCritiqueIcon from "../../public/open_critique_icon.svg";
+import openCritiqueIcon from "../open_critique_icon.svg";
 import GooeyNav from "./GooeyNav";
 
 const Navbar = () => {

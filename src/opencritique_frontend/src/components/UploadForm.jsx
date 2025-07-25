@@ -73,7 +73,7 @@ const UploadForm = () => {
   };
 
   return (
-    <div className="flex justify-center items-center p-10">
+    <div className="flex justify-center items-center p-10 mt-[70px]">
       <form
         onSubmit={handleSubmit}
         className="max-w-xl bg-bg-panel p-6 rounded-xl shadow-md text-text-base space-y-4"
