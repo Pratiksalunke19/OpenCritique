@@ -125,6 +125,7 @@ const ArtCardDetail = () => {
             onChange={(e) => setCritiqueText(e.target.value)}
             className="w-full p-2 rounded text-black"
             rows={4}
+            cols={60}
             placeholder="Write your critique here..."
           />
           <button

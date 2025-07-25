@@ -36,7 +36,7 @@ const [connect, updateConnect] = useState(false);
   }, []);
 
   return (
-    <div className="px-6 py-10 text-white min-h-[90vh]">
+    <div className="px-6 py-10 text-white min-h-[90vh] mt-[70px]">
       <h2 className="text-3xl font-bold mb-6">Welcome back</h2>
 
       {/* === Your Artworks Section === */}

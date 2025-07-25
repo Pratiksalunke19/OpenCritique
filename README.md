@@ -1,7 +1,9 @@
+# OpenCritique
+
 OpenCritique is a decentralized Web3 platform built on the Internet Computer (ICP) where artists upload works-in-progress (WIPs) and receive constructive feedback from the community. Critics are rewarded for detailed, helpful comments using a transparent, on-chain reputation and token system.
 
 Our Aim : 
-- Foster a decentralized platform for art critique and curation.
+-  Foster a decentralized platform for art critique and curation.
 -  Empower artists to receive meaningful feedback from the community.
 -  Leverage blockchain (ICP) to ensure transparency, authenticity, and permanence.
 -  Establish a fair and democratic system for artwork discovery through DAO governance.
@@ -16,6 +18,10 @@ clone the project :
 cd OpenCritique
 
 ## Backend Setup: 
+
+install and add plug wallet extension : 
+
+[Download Plug](https://plugwallet.ooo/download)
 
 use following command to install DFX SDK : 
 
@@ -53,25 +59,13 @@ Start local ICP blockchain and deploy canisters :
 
 ## Frontend Setup: 
 
+Move into frontend directory :
+
+``` cd src/opencritique_frontend ```
+
 Install Core dependencies : 
 
 ``` npm install ```
-
-```npm install @dfinity/agent @dfinity/candid```
-
-```npm install react-router-dom```
-
-```npm install pinata```
-
-```npm install -D tailwindcss@3 postcss autoprefixer```
-
-```npm install --save-dev typescript @types/react @types/react-dom```
-
-```npm install lucide-react```
-
-Install fonts and icons : 
-
-``` npm install --save react-icons ```
 
 Add Aurora background (via jsrepo):
 

@@ -17,7 +17,6 @@ add scroll animation for landing page
 please download plug ( on connect wallet )
 can we do multiple wallet access
 what is the canister request we are asking for
-add load state in My Studio
 once on chain upload so many images for demo
 update README.md : Pratik
 
@@ -33,6 +32,7 @@ create landing page
 implement the image upload to pinata 
 connect with wallet 
 fix image loading problem
+add load state in My Studio
 
 bugs:
     - urls should not be active when not connected
