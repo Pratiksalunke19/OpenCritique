@@ -9,6 +9,8 @@ Our Aim :
 -  Establish a fair and democratic system for artwork discovery through DAO governance.
 -  Build a censorship-resistant space where art and opinions thrive freely.
 
+[Demo video Youtube : ](https://youtu.be/phHrBfoIAPQ)
+
 # Setup (For local ICP blockchain)
 
 clone the project : 
