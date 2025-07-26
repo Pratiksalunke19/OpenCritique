@@ -12,7 +12,7 @@ const DashboardArtCard = ({ imageSrc, username, id, title,desc }) => {
   return (
     <div
       onClick={handleClick}
-      className="w-full flex items-center gap-4 p-4 bg-bg-panel rounded-xl hover:ring-2 hover:ring transition-all duration-300 hover:scale-105 transition-transform duration-300"
+      className="w-full flex items-center gap-4 p-4 bg-bg-panel cursor-pointer rounded-xl hover:ring-2 hover:ring transition-all duration-300 hover:scale-105 transition-transform duration-300"
     >
       {/* Image section */}
       <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg">
