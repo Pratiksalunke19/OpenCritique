@@ -13,6 +13,7 @@ import MyStudio from "./components/MyStudio";
 import MarketPlace from "./components/MarketPlace";
 import Dashboard from "./components/Dashboard";
 import { useUserContext } from "./components/context/UserContext";
+import Profile from "./components/user/Profile";
 
 function App() {
 
@@ -46,7 +47,7 @@ function App() {
           <Route path="/trending" element={<Welcome/>}/>
           <Route path="/upload" element={<UploadForm/>}/>
           <Route path="/art/:id" element={<ArtCardDetail />} />
-          <Route path="/mystudio" element={<MyStudio/>}/>
+          <Route path="/mystudio" element={<Profile/>}/>
           <Route path="/marketplace" element={<MarketPlaceWithPadding/>}/>
         </Routes>
       </div>

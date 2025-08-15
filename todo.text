@@ -1,8 +1,18 @@
-todo 
+todo
+
+1. Implement anonymity feature
+    - user profile section
+2. Allow critique bounty
+3. create marketplace (min NFTs)
+4. Multiple formats of arts support
+4. Leaderboards tab
+4. Deploy on ICP
+
 ICON IN INDEX PAGE
 apply compression before image upload : tomorrow
-stay anonymous feature for artists : tomorrow
+stay anonymous feature for artists 
 can we do multiple wallet access
+make phone friendly size
 
 switch tabs to button to make phone friendly ( on LandingPage.jsx )w
 switch theme button (light and dark) 
@@ -11,25 +21,13 @@ upvote feature for critiques
 Implement AI model while upload
 Right click availability   
 
-Done: 
-create landing page 
-implement the image upload to pinata 
-connect with wallet 
-activate footer links (and update them) : wasim and stalk
-create my studio page : Pratik
-create presentation
-fix image loading problem
-improve landing page: Wasim & Stalk 
-handle landing page (only show when not connected with wallet) : tomorrow
-create logo : Atharva
-add scroll animation for landing page
-add load state in My Studio
-please download plug ( on connect wallet )
-update README.md : Pratik
-
 bugs:
     - urls should not be active when not connected
     - plug pops up multiple times
     - artdetail page when loaded always scrolled downwards
     - feedback bounty cannot set to float value
     - MyStudio slow loading
+
+
+
+
