@@ -7,6 +7,13 @@ type Critique = record {
   upvoters: vec principal;
 };
 
+type Bounty = record {
+  token_ledger: opt principal;
+  escrow_subaccount: opt blob;     // [u8; 32] → blob in candid
+  intended_amount: nat64;
+  released: bool;
+};
+
 type Artwork = record {
   id: nat64;
   title: text;
@@ -19,7 +26,10 @@ type Artwork = record {
   feedback_bounty: nat64;
   license: text;
   critiques: vec Critique;
+  bounty: opt Bounty;              // <-- added bounty
 };
+
+type ResultText = variant { ok: text; err: text };
 
 service: {
   upload_art: (text, text, text, text, text, vec text, nat64, text) -> ();
@@ -30,6 +40,11 @@ service: {
   get_critiques_sorted: (nat64) -> (vec Critique) query;
   get_critiques_for_user: (principal) -> (vec Critique) query;
   get_points: (principal) -> (nat64) query;
-  delete_artwork: (nat64) -> (variant { ok: text; err: text });
+  delete_artwork: (nat64) -> (ResultText);
   get_my_artworks: () -> (vec Artwork);
+
+  // --- new bounty functions ---
+  prepare_bounty: (nat64, nat64) -> (ResultText);
+  claim_bounty: (nat64, nat64) -> (ResultText);
+  withdraw_bounty: (nat64) -> (ResultText);
 }

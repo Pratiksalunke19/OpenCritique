@@ -7,6 +7,14 @@ use serde::{Deserialize, Serialize};
 
 const ADMIN: &str = "aaaaa-aa"; 
 
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
+struct Bounty {
+    token_ledger: Option<Principal>,     // ICP Ledger canister
+    escrow_subaccount: Option<[u8; 32]>, // subaccount for holding tokens
+    intended_amount: u64,                // bounty set by author
+    released: bool,                      // whether already claimed
+}
+
 #[derive(CandidType, Serialize, Deserialize, Debug)]
 enum ResultText {
     Ok(String),
@@ -26,8 +34,8 @@ struct Artwork {
     feedback_bounty: u64,
     license: String,
     critiques: Vec<Critique>,
+    bounty: Option<Bounty>,   // <--- new field
 }
-
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 struct Critique {
@@ -45,6 +53,7 @@ thread_local! {
     static ART_ID_COUNTER: RefCell<u64> = RefCell::new(0);
 }
 
+// --- Update upload_art to initialize bounty as None ---
 #[update]
 fn upload_art(
     title: String,
@@ -76,6 +85,7 @@ fn upload_art(
         feedback_bounty,
         license,
         critiques: vec![],
+        bounty: None, // initialize as None
     };
 
     ARTWORKS.with(|arts| arts.borrow_mut().push(new_art));
@@ -206,5 +216,98 @@ fn get_my_artworks() -> Vec<Artwork> {
             .filter(|a| a.author == my_id)
             .cloned()
             .collect()
+    })
+}
+
+// --- Minimal bounty API (state machine only; no ledger calls) ---
+
+#[update]
+fn prepare_bounty(art_id: u64, amount: u64) -> ResultText {
+    let caller_id = caller();
+
+    ARTWORKS.with(|arts| {
+        let mut artworks = arts.borrow_mut();
+        match artworks.iter_mut().find(|a| a.id == art_id) {
+            Some(art) => {
+                if art.author != caller_id {
+                    return ResultText::Err("Only author can set bounty".to_string());
+                }
+                // set minimal bounty metadata; ledger/subaccount left None for now
+                art.bounty = Some(Bounty {
+                    token_ledger: None,
+                    escrow_subaccount: None,
+                    intended_amount: amount,
+                    released: false,
+                });
+                art.feedback_bounty = amount; // keep number in sync if you want
+                ResultText::Ok("Bounty prepared".to_string())
+            }
+            None => ResultText::Err("Artwork not found".to_string()),
+        }
+    })
+}
+
+#[update]
+fn claim_bounty(art_id: u64, critique_id: u64) -> ResultText {
+    let caller_id = caller();
+
+    ARTWORKS.with(|arts| {
+        let mut artworks = arts.borrow_mut();
+        match artworks.iter_mut().find(|a| a.id == art_id) {
+            Some(art) => {
+                if art.author != caller_id {
+                    return ResultText::Err("Only author can release bounty".to_string());
+                }
+                match &mut art.bounty {
+                    Some(bounty) => {
+                        if bounty.released {
+                            return ResultText::Err("Bounty already released".to_string());
+                        }
+                        match art.critiques.iter().find(|c| c.id == critique_id) {
+                            Some(cri) => {
+                                bounty.released = true;
+                                // NOTE: real token transfer to cri.critic must be implemented with ledger
+                                return ResultText::Ok(format!(
+                                    "Bounty marked released to {}",
+                                    cri.critic.to_text()
+                                ));
+                            }
+                            None => return ResultText::Err("Critique not found".to_string()),
+                        }
+                    }
+                    None => return ResultText::Err("No active bounty".to_string()),
+                }
+            }
+            None => ResultText::Err("Artwork not found".to_string()),
+        }
+    })
+}
+
+#[update]
+fn withdraw_bounty(art_id: u64) -> ResultText {
+    let caller_id = caller();
+
+    ARTWORKS.with(|arts| {
+        let mut artworks = arts.borrow_mut();
+        match artworks.iter_mut().find(|a| a.id == art_id) {
+            Some(art) => {
+                if art.author != caller_id {
+                    return ResultText::Err("Only author can withdraw bounty".to_string());
+                }
+                match &art.bounty {
+                    Some(bounty) => {
+                        if bounty.released {
+                            return ResultText::Err("Bounty already released, cannot withdraw".to_string());
+                        }
+                        // remove bounty meta (actual token refund not implemented yet)
+                        art.bounty = None;
+                        art.feedback_bounty = 0;
+                        ResultText::Ok("Bounty withdrawn".to_string())
+                    }
+                    None => ResultText::Err("No active bounty to withdraw".to_string()),
+                }
+            }
+            None => ResultText::Err("Artwork not found".to_string()),
+        }
     })
 }
