@@ -3,9 +3,9 @@ import { uploadArt, getArtworks } from "./services/opencritique";
 import Navbar from "./components/Navbar";
 import Welcome from "./components/Welcome";
 import Footer from "./components/Footer";
-import UploadForm  from "./components/UploadForm";
+import UploadForm from "./components/UploadForm";
 import { PinataSDK } from "pinata";
-import { Routes,Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import ArtCardDetail from "./components/ArtCardDetail";
 import LandingPage from "./pages/LandingPage";
 import Aurora from "./components/Aurora/Aurora";
@@ -14,9 +14,9 @@ import MarketPlace from "./components/MarketPlace";
 import Dashboard from "./components/Dashboard";
 import { useUserContext } from "./components/context/UserContext";
 import Profile from "./components/user/Profile";
+import CheckProfileCompletion from "./components/user/CheckProfileCompletion";
 
 function App() {
-
   const { isConnected } = useUserContext();
   // Scroll to top button state
   const [showScroll, setShowScroll] = useState(false);
@@ -25,12 +25,12 @@ function App() {
     const handleScroll = () => {
       setShowScroll(window.scrollY > 200);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -38,20 +38,31 @@ function App() {
       {/* Aurora is now rendered only in the LandingPage hero section */}
       {/* Navbar always above Aurora and hero */}
       <div className="relative z-20">
-        <Navbar/>
+        <Navbar />
       </div>
       <div className="flex-grow">
         <Routes>
           {/* <Route path="/" element={ <Dashboard/>}/> */}
-          <Route path="/" element={isConnected ? <Dashboard/> : <LandingPage/>}/>
-          <Route path="/trending" element={<Welcome/>}/>
-          <Route path="/upload" element={<UploadForm/>}/>
+          <Route
+            path="/"
+            element={
+              isConnected ? (
+                <CheckProfileCompletion>
+                  <Dashboard />
+                </CheckProfileCompletion>
+              ) : (
+                <LandingPage />
+              )
+            }
+          />
+          <Route path="/trending" element={<Welcome />} />
+          <Route path="/upload" element={<UploadForm />} />
           <Route path="/art/:id" element={<ArtCardDetail />} />
-          <Route path="/mystudio" element={<Profile/>}/>
-          <Route path="/marketplace" element={<MarketPlaceWithPadding/>}/>
+          <Route path="/mystudio" element={<Profile />} />
+          <Route path="/marketplace" element={<MarketPlaceWithPadding />} />
         </Routes>
       </div>
-      <Footer/>
+      <Footer />
 
       {/* Scroll to Top Button */}
       {showScroll && (
@@ -61,8 +72,20 @@ function App() {
           aria-label="Scroll to top"
         >
           {/* Upward arrow SVG icon */}
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 15l7-7 7 7"
+            />
           </svg>
         </button>
       )}
@@ -80,4 +103,3 @@ function MarketPlaceWithPadding() {
 }
 
 export default App;
-
