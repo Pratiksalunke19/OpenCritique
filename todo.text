@@ -8,12 +8,15 @@ todo
 4. Leaderboards tab
 4. Deploy on ICP
 
+add helper for writing critique ( like in stackoverflow )
 ICON IN INDEX PAGE
 apply compression before image upload : tomorrow
 stay anonymous feature for artists 
 can we do multiple wallet access
 make phone friendly size
+integrate user-profile and mystudio
 
+update critique window UI
 switch tabs to button to make phone friendly ( on LandingPage.jsx )w
 switch theme button (light and dark) 
 make pinata storage private
