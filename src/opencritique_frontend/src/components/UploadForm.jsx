@@ -107,7 +107,7 @@ const UploadForm = () => {
           <input
             type="file"
             name="artwork"
-            accept="image/*"
+            accept="*"
             className="w-full bg-bg-base border border-border p-2 rounded-md"
             required
             onChange={handleChange}

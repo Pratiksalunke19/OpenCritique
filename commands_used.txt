@@ -35,3 +35,5 @@ dfx wallet set-name test-wallet
 
 dfx extension install nns
 dfx nns install
+
+npm install react-masonry-css

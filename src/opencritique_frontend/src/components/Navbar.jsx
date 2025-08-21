@@ -51,6 +51,7 @@ const Navbar = () => {
           className="flex items-center space-x-2 cursor-pointer"
           onClick={navigateHome}
         >
+          {console.log('opencritique_icon: ',openCritiqueIcon)}
           <img
             src={openCritiqueIcon}
             alt="OpenCritique Icon"
