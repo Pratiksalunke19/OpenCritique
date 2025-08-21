@@ -28,6 +28,10 @@ npm install framer-motion
 
 // candid extractor tool for debugging
 cargo install candid-extractor
+cargo install generate-did
 
 dfx wallet name
 dfx wallet set-name test-wallet
+
+dfx extension install nns
+dfx nns install

@@ -6,19 +6,12 @@ use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
 pub mod bounty;
-pub use bounty::{
-    Bounty,
-    prepare_bounty,
-    claim_bounty,
-    withdraw_bounty,
-    get_bounty_escrow_account,
-    get_bounty_escrow_balance,
-};
+pub use bounty::{Bounty, prepare_bounty, claim_bounty, withdraw_bounty, get_bounty_escrow_account_hex, get_bounty_escrow_balance};
 
 const ADMIN: &str = "aaaaa-aa"; 
 
 #[derive(CandidType, Serialize, Deserialize, Debug)]
-enum ResultText {
+pub enum ResultText {
     Ok(String),
     Err(String),
 }
@@ -220,3 +213,6 @@ fn get_my_artworks() -> Vec<Artwork> {
             .collect()
     })
 }
+
+// Enable Candid export
+ic_cdk::export_candid!();

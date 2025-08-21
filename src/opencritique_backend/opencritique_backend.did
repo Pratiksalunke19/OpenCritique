@@ -1,50 +1,53 @@
-type Critique = record {
-  id: nat64;
-  art_id: nat64;
-  critic: principal;
-  text: text;
-  upvotes: nat64;
-  upvoters: vec principal;
-};
-
-type Bounty = record {
-  token_ledger: opt principal;
-  escrow_subaccount: opt blob;     // [u8; 32] → blob in candid
-  intended_amount: nat64;
-  released: bool;
-};
-
 type Artwork = record {
-  id: nat64;
-  title: text;
-  description: text;
-  image_url: text;
-  author: principal;
-  username: text;
-  email: text;
-  tags: vec text;
-  feedback_bounty: nat64;
-  license: text;
-  critiques: vec Critique;
-  bounty: opt Bounty;              // <-- added bounty
+  id : nat64;
+  title : text;
+  username : text;
+  image_url : text;
+  critiques : vec Critique;
+  tags : vec text;
+  description : text;
+  bounty : opt Bounty;
+  email : text;
+  author : principal;
+  license : text;
+  feedback_bounty : nat64;
 };
-
-type ResultText = variant { ok: text; err: text };
-
-service: {
-  upload_art: (text, text, text, text, text, vec text, nat64, text) -> ();
-  post_critique: (nat64, text) -> ();
-  upvote_critique: (nat64, nat64) -> ();
-  get_artworks: () -> (vec Artwork) query;
-  get_critiques: (nat64) -> (vec Critique) query;
-  get_critiques_sorted: (nat64) -> (vec Critique) query;
-  get_critiques_for_user: (principal) -> (vec Critique) query;
-  get_points: (principal) -> (nat64) query;
-  delete_artwork: (nat64) -> (ResultText);
-  get_my_artworks: () -> (vec Artwork);
-
-  // --- new bounty functions ---
-  prepare_bounty: (nat64, nat64) -> (ResultText);
-  claim_bounty: (nat64, nat64) -> (ResultText);
-  withdraw_bounty: (nat64) -> (ResultText);
+type Bounty = record {
+  escrow_subaccount : opt blob;
+  released : bool;
+  intended_amount : nat64;
+  token_ledger : opt principal;
+};
+type Critique = record {
+  id : nat64;
+  upvotes : nat64;
+  "text" : text;
+  critic : principal;
+  art_id : nat64;
+  upvoters : vec principal;
+};
+type ResultText = variant { Ok : text; Err : text };
+service : {
+  // Claim bounty: author triggers a ledger transfer from escrow -> critic principal.
+  // Returns ResultText (string messages) — no '?' operator used so error type stays ResultText.
+  claim_bounty : (nat64, nat64) -> (ResultText);
+  delete_artwork : (nat64) -> (ResultText);
+  get_artworks : () -> (vec Artwork) query;
+  // Return escrow AccountIdentifier hex for UI (owner = this canister)
+  get_bounty_escrow_account_hex : (nat64) -> (opt text) query;
+  // Query escrow balance for UI (returns e8s as u64). Returns 0 if missing or on error.
+  get_bounty_escrow_balance : (nat64) -> (nat64) query;
+  get_critiques : (nat64) -> (vec Critique) query;
+  get_critiques_for_user : (principal) -> (vec Critique) query;
+  get_critiques_sorted : (nat64) -> (vec Critique) query;
+  get_my_artworks : () -> (vec Artwork) query;
+  get_points : (principal) -> (nat64) query;
+  post_critique : (nat64, text) -> ();
+  // Prepare a bounty: author only. Stores ledger canister principal and escrow subaccount.
+  prepare_bounty : (nat64, nat64, principal) -> (ResultText);
+  upload_art : (text, text, text, text, text, vec text, nat64, text) -> ();
+  upvote_critique : (nat64, nat64) -> ();
+  // Withdraw bounty: author attempts to refund any escrow back to themselves.
+  // If escrow empty, clears metadata.
+  withdraw_bounty : (nat64) -> (ResultText);
 }
