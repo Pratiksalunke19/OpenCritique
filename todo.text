@@ -8,6 +8,8 @@ todo
 4. Leaderboards tab
 4. Deploy on ICP
 
+play video for music files
+handle random shuffle on welcome page ( re-shuffles with every render)
 user dashboard with profile and allow to update arts uploaded
 interesting quotes while uploading art
 drop to copy window in uploadform

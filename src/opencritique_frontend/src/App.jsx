@@ -51,7 +51,10 @@ function App() {
                   <Dashboard />
                 </CheckProfileCompletion>
               ) : (
+                <div>
                 <LandingPage />
+                <Footer />
+                </div>
               )
             }
           />
@@ -62,7 +65,6 @@ function App() {
           <Route path="/marketplace" element={<MarketPlaceWithPadding />} />
         </Routes>
       </div>
-      <Footer />
 
       {/* Scroll to Top Button */}
       {showScroll && (

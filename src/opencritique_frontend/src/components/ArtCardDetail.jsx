@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useArtContext } from "./context/ArtContext";
 import { useState } from "react";
 import { opencritique_backend } from "../../../declarations/opencritique_backend";
+import { ThumbsUp } from "lucide-react";
 
 const ArtCardDetail = () => {
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
@@ -81,45 +82,62 @@ const ArtCardDetail = () => {
         </div>
 
         {/* Right side: Details */}
-        <div className="w-full md:w-1/2 p-4 space-y-4 ">
-          <h2 className="text-3xl font-bold text-orange-400">{title}</h2>
-          <p className="text-gray-300">{description}</p>
+        <div className="w-full md:w-1/2 p-6">
+          <div className="bg-[#1e293b] rounded-2xl shadow-lg p-6 space-y-4">
+            {/* Title & Description */}
+            <h2 className="text-3xl font-bold text-primary">{title}</h2>
+            <p className="text-gray-300 italic">{description}</p>
 
-          <div className="mt-4 space-y-2 text-sm">
-            <p>
-              <span className="font-semibold text-orange-400">Artist:</span>{" "}
-              {username}
-            </p>
-            <p>
-              <span className="font-semibold text-orange-400">Email:</span>{" "}
-              {email}
-            </p>
-            <p>
-              <span className="font-semibold text-orange-400">Bounty:</span>{" "}
-              {bounty} ICP
-            </p>
-            <p>
-              <span className="font-semibold text-orange-400">License:</span>{" "}
-              {license}
-            </p>
-            <p>
-              <span className="font-semibold text-orange-400">Tags:</span>{" "}
-              {tags?.join(", ") || "None"}
-            </p>
+            {/* Metadata */}
+            <div className="space-y-3 text-sm divide-y divide-gray-700">
+              <div className="flex items-center gap-2 pt-2">
+                <span className="text-orange-400 font-semibold">
+                  👤 Artist:
+                </span>
+                <span>{username}</span>
+              </div>
+
+              {username != "Anonymous" && (
+                <div className="flex items-center gap-2 pt-2">
+                  <span className="text-orange-400 font-semibold">
+                    📧 Email:
+                  </span>
+                  <span className="text-blue-400">{email}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <span className="text-orange-400 font-semibold">
+                  💰 Bounty:
+                </span>
+                <span>{bounty} ICP</span>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <span className="text-orange-400 font-semibold">
+                  📜 License:
+                </span>
+                <span>{license}</span>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <span className="text-orange-400 font-semibold">🏷️ Tags:</span>
+                <span>{tags?.join(", ") || "None"}</span>
+              </div>
+            </div>
+
+            {/* Critique button */}
+            <button
+              className="mt-4 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg shadow-md transition duration-200"
+              onClick={() => setShowForm(true)}
+            >
+              ✍️ Critique this Artwork
+            </button>
           </div>
-          {/* Button to critique */}
-          <button
-            className="mt-6 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded-lg transition duration-200"
-            onClick={() => setShowForm(true)}
-          >
-            Critique
-          </button>
         </div>
       </div>
 
       {/* Critique Form */}
       {showForm && (
-        <div className="mt-8 bg-[#1e293b] p-4 rounded-lg">
+        <div className="mt-8 bg-[#1e293b] w-full p-4 rounded-lg">
           <textarea
             value={critiqueText}
             onChange={(e) => setCritiqueText(e.target.value)}
@@ -166,14 +184,14 @@ const ArtCardDetail = () => {
           critiques.map((crit) => (
             <div
               key={crit.id}
-              className="bg-[#1e293b] p-4 my-2 rounded-lg flex justify-between items-center"
+              className="bg-[#1e293b] p-8 my-2 rounded-xl flex justify-between items-center"
             >
               <p>{crit.text}</p>
               <button
                 onClick={() => handleUpvote(crit.id)}
-                className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded"
+                className="bg-primary px-3 py-1 rounded mt-2"
               >
-                👍 {crit.upvotes}
+                <ThumbsUp/> {crit.upvotes}
               </button>
             </div>
           ))

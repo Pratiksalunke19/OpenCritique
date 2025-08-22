@@ -18,3 +18,30 @@ body {
   src: url('./assets/fonts/Bebas-Neue.woff2') format('woff2');
   font-weight: 400;
 }
+
+@keyframes borderMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-border {
+  background: linear-gradient(
+    270deg,
+    #f823a3,
+    #2f28f7,
+    #1cf16a,
+    #facc15,
+    #f51a8b,
+    #2587fd
+  );
+  background-size: 1200% 1200%;
+  animation: borderMove 6s ease infinite;
+}
+
