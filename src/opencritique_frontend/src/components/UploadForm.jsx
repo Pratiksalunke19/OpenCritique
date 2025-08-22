@@ -38,26 +38,60 @@ const UploadForm = () => {
       // 1. Upload to Pinata
       const cid = await uploadToPinata(formData.artwork);
 
-      // 2. Call canister function
-      const principal = formData.anonymous ? null : window.ic.plug.principalId; // or use caller()
+      // 2. Detect media type and MIME
+      const file = formData.artwork;
+      const mimeType = file?.type || "application/octet-stream";
+      let mediaType = "digital";
+
+      if (mimeType.startsWith("image/")) mediaType = "image";
+      else if (mimeType.startsWith("audio/")) mediaType = "music";
+      else if (mimeType.startsWith("video/")) mediaType = "video";
+      else if (mimeType === "text/plain") mediaType = "poetry";
+
+      // Optional text excerpt for text files
+      let textExcerpt = null;
+      if (mediaType === "poetry" || mediaType === "rap") {
+        const textContent = await file.text();
+        textExcerpt = textContent.slice(0, 200); // preview first 200 chars
+      }
+
+      console.log("mime type: ",mimeType)
+      console.log("media type: ",mediaType)
+
+      // 3. Prepare optional field (Candid option => [] for None, [value] for Some)
+      const candidTextExcerpt = textExcerpt ? [textExcerpt] : [];
+
+      // 4. Prepare username/email
+      const username = formData.anonymous
+        ? "anonymous"
+        : window.ic?.plug?.principalId || "guest";
+      const email = formData.anonymous
+        ? "anonymous@example.com"
+        : "user@example.com";
+
+      // 5. Call backend
       await opencritique_backend.upload_art(
-        formData.title.trim(),
-        formData.description.trim(),
-        cid, // image_url (CID only)
-        formData.anonymous ? "anonymous" : window.ic.plug.principalId, // username
-        formData.anonymous ? "anonymous@example.com" : "user@example.com", // temporary email logic
-        formData.tags.split(",").map((tag) => tag.trim()),
-        formData.bounty ? Number(formData.bounty) : 0,
-        formData.license || "N/A"
+        formData.title.trim(), // text
+        formData.description.trim(), // text
+        cid, // text
+        username, // text
+        email, // text
+        formData.tags.split(",").map((tag) => tag.trim()), // vec text
+        formData.bounty ? Number(formData.bounty) : 0, // nat64
+        formData.license || "N/A", // text
+        mediaType, // text
+        mimeType, // text
+        candidTextExcerpt // opt text
       );
-      // 3. Refresh artworks in global state
+
+      // 6. Refresh and notify
       await fetchArtworks();
       alert("Artwork uploaded successfully!");
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Upload failed. Check console.");
     } finally {
-      // implement code to clear form fields
+      // 7. Reset form
       setLoading(false);
       e.target.reset();
       setFormData({

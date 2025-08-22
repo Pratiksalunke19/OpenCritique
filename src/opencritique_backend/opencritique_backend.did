@@ -3,13 +3,21 @@ type Artwork = record {
   title : text;
   username : text;
   image_url : text;
+  text_excerpt : opt text;
   critiques : vec Critique;
+  media_type : opt text;
   tags : vec text;
+  media_files : vec MediaFile;
+  mime_type : opt text;
   description : text;
   bounty : opt Bounty;
   email : text;
   author : principal;
+  created_at_ns : nat64;
+  thumbnail_cid : opt text;
+  main_cid : opt text;
   license : text;
+  preview_cid : opt text;
   feedback_bounty : nat64;
 };
 type Bounty = record {
@@ -25,6 +33,16 @@ type Critique = record {
   critic : principal;
   art_id : nat64;
   upvoters : vec principal;
+};
+type Dimensions = record { height : nat32; width : nat32 };
+type MediaFile = record {
+  cid : text;
+  mime : opt text;
+  name : opt text;
+  size_bytes : opt nat64;
+  role : opt text;
+  duration_ms : opt nat64;
+  dimensions : opt Dimensions;
 };
 type ResultText = variant { Ok : text; Err : text };
 service : {
@@ -45,7 +63,19 @@ service : {
   post_critique : (nat64, text) -> ();
   // Prepare a bounty: author only. Stores ledger canister principal and escrow subaccount.
   prepare_bounty : (nat64, nat64, principal) -> (ResultText);
-  upload_art : (text, text, text, text, text, vec text, nat64, text) -> ();
+  upload_art : (
+      text,
+      text,
+      text,
+      text,
+      text,
+      vec text,
+      nat64,
+      text,
+      opt text,
+      opt text,
+      opt text,
+    ) -> ();
   upvote_critique : (nat64, nat64) -> ();
   // Withdraw bounty: author attempts to refund any escrow back to themselves.
   // If escrow empty, clears metadata.

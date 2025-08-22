@@ -85,7 +85,7 @@ struct Artwork {
     title: String,
     description: String,
 
-    // Existing field kept (now treated as "primary CID or gateway URL")
+    // Treated as "primary CID or gateway URL" (back-compat name)
     image_url: String,
 
     author: Principal,
@@ -99,11 +99,11 @@ struct Artwork {
     // Bounty stays as-is
     bounty: Option<Bounty>,
 
-    /* ----- New, backwards-compatible metadata fields ----- */
+    /* ----- Backwards-compatible metadata fields ----- */
 
-    /// Broad type of this artwork (inferred if not explicitly set by future APIs)
+    /// Broad type of this artwork (your upload currently infers this)
     #[serde(default)]
-    media_type: MediaType,
+    media_type: Option<String>,
 
     /// Primary content CID (mirrors `image_url` if that string is a CID)
     #[serde(default)]
@@ -115,11 +115,11 @@ struct Artwork {
     #[serde(default)]
     preview_cid: Option<String>,
 
-    /// Optional MIME type for the primary content
+    /// Optional MIME type for the primary content (your upload currently sets this to None)
     #[serde(default)]
     mime_type: Option<String>,
 
-    /// Optional short excerpt for text works (poetry/rap), safe to render without fetching IPFS
+    /// Optional short excerpt for text works (poetry/rap)
     #[serde(default)]
     text_excerpt: Option<String>,
 
@@ -194,12 +194,15 @@ fn infer_media_type(primary: &str, tags: &[String]) -> MediaType {
 fn upload_art(
     title: String,
     description: String,
-    image_url: String,
+    primary_url_or_cid: String, // now name reflects that it can be CID or URL
     username: String,
     email: String,
     tags: Vec<String>,
     feedback_bounty: u64,
     license: String,
+    media_type: Option<String>, // e.g., "image", "music", "poetry", "rap", "digital"
+    mime_type: Option<String>,  // e.g., "image/png", "audio/mpeg", "text/plain"
+    text_excerpt: Option<String>, // optional for text-based works
 ) {
     let author = caller();
 
@@ -209,15 +212,15 @@ fn upload_art(
         *id
     });
 
-    // Treat `image_url` as the "primary content locator".
-    // If it's a bare CID, we'll also mirror it into `main_cid`.
-    let primary = image_url.clone();
-    let media_type = infer_media_type(&primary, &tags);
+    // Detect if input is a CID
+    let is_probable_cid = primary_url_or_cid.starts_with("Qm") || primary_url_or_cid.starts_with("bafy");
+    let main_cid = if is_probable_cid {
+        Some(primary_url_or_cid.clone())
+    } else {
+        None
+    };
 
-    // Heuristic: if the string looks like a CID (starts with "Qm" or "bafy"), store it as main_cid.
-    let is_probable_cid = primary.starts_with("Qm") || primary.starts_with("bafy");
-    let main_cid = if is_probable_cid { Some(primary.clone()) } else { None };
-
+    // Prepare media files vector
     let mut media_files: Vec<MediaFile> = Vec::new();
     if let Some(cid) = main_cid.clone() {
         media_files.push(MediaFile::with_role(cid, "original"));
@@ -228,7 +231,7 @@ fn upload_art(
         title,
         description,
 
-        image_url, // kept for backward compatibility
+        image_url: primary_url_or_cid.clone(), // keep for backwards compatibility
 
         author,
         username,
@@ -237,17 +240,17 @@ fn upload_art(
         feedback_bounty,
         license,
         critiques: vec![],
-        bounty: None, // initialize as None
+        bounty: None, // start with no bounty
 
-        // New metadata (mostly inferred/defaulted)
+        // Modern metadata support
         media_type,
         main_cid,
         thumbnail_cid: None,
         preview_cid: None,
-        mime_type: None,
-        text_excerpt: None,
+        mime_type,
+        text_excerpt,
         media_files,
-        created_at_ns: time(), // nanoseconds since epoch
+        created_at_ns: time(),
     };
 
     ARTWORKS.with(|arts| arts.borrow_mut().push(new_art));
