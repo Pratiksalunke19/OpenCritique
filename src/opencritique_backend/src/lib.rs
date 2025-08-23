@@ -99,6 +99,10 @@ struct Artwork {
     // Bounty stays as-is
     bounty: Option<Bounty>,
 
+    // NFT
+    pub is_nft: bool,
+    pub nft_price: u64,
+
     /* ----- Backwards-compatible metadata fields ----- */
 
     /// Broad type of this artwork (your upload currently infers this)
@@ -203,6 +207,8 @@ fn upload_art(
     media_type: Option<String>, // e.g., "image", "music", "poetry", "rap", "digital"
     mime_type: Option<String>,  // e.g., "image/png", "audio/mpeg", "text/plain"
     text_excerpt: Option<String>, // optional for text-based works
+    is_nft: bool,
+    nft_price: u64,
 ) {
     let author = caller();
 
@@ -241,6 +247,9 @@ fn upload_art(
         license,
         critiques: vec![],
         bounty: None, // start with no bounty
+
+        is_nft,
+        nft_price,
 
         // Modern metadata support
         media_type,

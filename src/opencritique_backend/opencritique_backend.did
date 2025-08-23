@@ -1,5 +1,6 @@
 type Artwork = record {
   id : nat64;
+  nft_price : nat64;
   title : text;
   username : text;
   image_url : text;
@@ -12,6 +13,7 @@ type Artwork = record {
   description : text;
   bounty : opt Bounty;
   email : text;
+  is_nft : bool;
   author : principal;
   created_at_ns : nat64;
   thumbnail_cid : opt text;
@@ -75,6 +77,8 @@ service : {
       opt text,
       opt text,
       opt text,
+      bool,
+      nat64,
     ) -> ();
   upvote_critique : (nat64, nat64) -> ();
   // Withdraw bounty: author attempts to refund any escrow back to themselves.

@@ -15,6 +15,8 @@ const UploadForm = () => {
     license: "",
     anonymous: false,
     artwork: null,
+    is_nft: false,
+    nft_price: "",
   });
 
   const handleChange = (e) => {
@@ -73,14 +75,16 @@ const UploadForm = () => {
         formData.title.trim(),
         formData.description.trim(),
         cid,
-        formData.anonymous? "Anonymous" : username,
+        formData.anonymous ? "Anonymous" : username,
         email,
         formData.tags.split(",").map((tag) => tag.trim()),
         formData.bounty ? Number(formData.bounty) : 0,
         formData.license || "N/A",
         mediaType ? [mediaType] : [],
         mimeType ? [mimeType] : [],
-        textExcerpt ? [textExcerpt] : []
+        textExcerpt ? [textExcerpt] : [],
+        !!formData.is_nft, 
+        0,
       );
 
       await fetchArtworks();
@@ -154,7 +158,9 @@ const UploadForm = () => {
               )}
             </div>
           ) : (
-            <p className="text-gray-400">📂 Drag & drop your art here, or click to browse</p>
+            <p className="text-gray-400">
+              📂 Drag & drop your art here, or click to browse
+            </p>
           )}
           <input
             type="file"

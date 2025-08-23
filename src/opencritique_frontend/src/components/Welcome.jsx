@@ -82,6 +82,8 @@ const Welcome = () => {
           type.toLowerCase() === "audio" || type.toLowerCase() === "music"
       );
 
+      console.log("arts: ",art)
+
     if (filter === "withBounty") return Number(art.feedback_bounty) > 0;
     if (filter === "withoutBounty") return Number(art.feedback_bounty) === 0;
     if (filter === "audio") return isAudio;

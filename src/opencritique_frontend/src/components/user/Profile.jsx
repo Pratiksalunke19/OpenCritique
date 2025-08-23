@@ -1,5 +1,6 @@
 import React from "react";
 import StatCard from "./StatCard";
+import MyStudio from "../MyStudio";
 
 export default function Profile({ user }) {
   // Example props structure:
@@ -71,6 +72,10 @@ export default function Profile({ user }) {
           </div>
         </div>
       )}
+
+      <div>
+        <MyStudio/>
+      </div>
     </div>
   );
 }
