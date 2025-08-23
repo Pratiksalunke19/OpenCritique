@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient"; 
 import ProfileForm from "./ProfileForm"; 
 import { useUserContext } from "../context/UserContext";
+import LoadingSpinner from "../LoadingSpinner";
 
 const CheckProfileCompletion = ({ children }) => {
   const { principal } = useUserContext();
@@ -33,7 +34,7 @@ const CheckProfileCompletion = ({ children }) => {
     fetchProfile();
   }, [principal]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <div className="h-[100vh] w-[100vw] mt-[500px]"><LoadingSpinner/></div>;
 
   // No profile yet → show form
   if (principal && !profile) {

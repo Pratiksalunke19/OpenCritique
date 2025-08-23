@@ -217,45 +217,60 @@ const ArtCardDetail = () => {
         </div>
       </div>
 
-      {/* Critique Form */}
+      {/* Critique Form (Floating Overlay) */}
       {showForm && (
-        <div className="mt-8 bg-[#1e293b] w-full p-4 rounded-lg">
-          <textarea
-            value={critiqueText}
-            onChange={(e) => setCritiqueText(e.target.value)}
-            className="w-full p-2 rounded text-black"
-            rows={4}
-            cols={60}
-            placeholder="Write your critique here..."
-          />
-          <button
-            onClick={handleSubmitCritique}
-            className="mt-2 bg-green-600 px-4 py-2 rounded hover:bg-green-700"
-          >
-            {isSubmitting && (
-              <svg
-                className="animate-spin h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8H4z"
-                />
-              </svg>
-            )}
-            Submit
-          </button>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-[#1e293b] w-full max-w-lg p-6 rounded-2xl shadow-2xl relative transform transition-all duration-300 scale-100 hover:scale-105">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowForm(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Write a Critique
+            </h2>
+
+            <textarea
+              value={critiqueText}
+              onChange={(e) => setCritiqueText(e.target.value)}
+              className="w-full p-3 rounded-lg bg-white/90 text-black focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              rows={5}
+              placeholder="Share your thoughts..."
+            />
+
+            <button
+              onClick={handleSubmitCritique}
+              disabled={isSubmitting}
+              className="mt-4 w-full flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-green-700 transition"
+            >
+              {isSubmitting && (
+                <svg
+                  className="animate-spin h-5 w-5 text-white mr-2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+              )}
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </button>
+          </div>
         </div>
       )}
 

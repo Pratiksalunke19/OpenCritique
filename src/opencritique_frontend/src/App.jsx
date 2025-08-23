@@ -30,6 +30,18 @@ function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() =>{
+    const disableRightClick = (e) => {
+      if (e.target.tagName === "IMG") {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("contextmenu", disableRightClick);
+    return () => {
+      document.removeEventListener("contextmenu", disableRightClick);
+    };
+  },[])
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

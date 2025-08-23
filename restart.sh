@@ -203,21 +203,4 @@ dfx canister call opencritique_backend upload_art \
   "lindh-o3lck-kpmvk-mvlhp-k5poe-raipw-fa65l-24cnv-ht54i-j53ic-sqe"
 )'
 
-# 11. Forgotten Frequencies
-dfx canister call opencritique_backend upload_art \
-'("Forgotten Frequencies",
-  "A soundwave suspended in the void",
-  "bafkreienj3nqd7kkr7z4ydeb4pgz5ruzswzjyl6nuw7vvm3s4qrsc5q5ny",
-  "Liam", "liam@example.com",
-  vec { "sound"; "void"; "vibration" },
-  0,
-  "CC-BY",
-  opt "music",
-  opt "audio/mpeg",
-  null,
-  false,
-  0,
-  "lindh-o3lck-kpmvk-mvlhp-k5poe-raipw-fa65l-24cnv-ht54i-j53ic-sqe"
-)'
-
 # log "✅ All sample artworks uploaded successfully!"

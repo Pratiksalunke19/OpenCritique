@@ -48,7 +48,7 @@ const Marketplace = () => {
 
       <div className="flex">
         {/* Sidebar Filters */}
-        <div className="w-64 p-6 border-r bg-gray-50">
+        <div className="w-64 h-[100vh] p-6 border-r bg-gray-50 ">
           {/* Price Filter */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
