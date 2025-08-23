@@ -15,7 +15,7 @@ import Dashboard from "./components/Dashboard";
 import { useUserContext } from "./components/context/UserContext";
 import Profile from "./components/user/Profile";
 import CheckProfileCompletion from "./components/user/CheckProfileCompletion";
-import NFTArtCard from "./components/NFTArtCard"
+import NFTArtCard from "./components/NFT/NFTArtCard";
 
 function App() {
   const { isConnected } = useUserContext();
@@ -49,7 +49,7 @@ function App() {
             element={
               isConnected ? (
                 <CheckProfileCompletion>
-                  <Welcome/>
+                  <Welcome />
                 </CheckProfileCompletion>
               ) : (
                 <div>

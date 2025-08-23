@@ -85,6 +85,7 @@ const UploadForm = () => {
         textExcerpt ? [textExcerpt] : [],
         !!formData.is_nft, 
         0,
+        "",
       );
 
       await fetchArtworks();

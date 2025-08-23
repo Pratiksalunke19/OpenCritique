@@ -1,7 +1,20 @@
 import React from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useArtContext } from "./context/ArtContext";
-import { ArrowLeft, Heart, Share2, ShoppingCart, User, Calendar, Tag, FileText, Banknote } from "lucide-react";
+import { useArtContext } from "../context/ArtContext";
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  ShoppingCart,
+  User,
+  Calendar,
+  Tag,
+  FileText,
+  Banknote,
+} from "lucide-react";
+
+import PurchaseModal from "./PurchaseModel";
 
 const NFTArtCard = () => {
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
@@ -9,16 +22,24 @@ const NFTArtCard = () => {
   const navigate = useNavigate();
   const { artworks } = useArtContext();
 
-  const artwork = artworks.find((art) => art.id.toString() === id && art.is_nft === true);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+
+  const artwork = artworks.find(
+    (art) => art.id.toString() === id && art.is_nft === true
+  );
 
   if (!artwork) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">NFT Not Found</h2>
-          <p className="text-gray-600 mb-4">This NFT doesn't exist or is not available for sale.</p>
-          <button 
-            onClick={() => navigate('/marketplace')}
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            NFT Not Found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            This NFT doesn't exist or is not available for sale.
+          </p>
+          <button
+            onClick={() => navigate("/marketplace")}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
             Back to Marketplace
@@ -39,53 +60,64 @@ const NFTArtCard = () => {
     tags,
     created_at_ns,
     media_type,
-    mime_type
+    mime_type,
   } = artwork;
 
   // Fixed formatDate function to handle BigInt
   const formatDate = (nanoseconds) => {
     try {
       if (!nanoseconds) return "Recently";
-      
+
       // Convert BigInt to Number if needed
-      const nsInt = typeof nanoseconds === 'bigint' ? Number(nanoseconds) : nanoseconds;
-      
+      const nsInt =
+        typeof nanoseconds === "bigint" ? Number(nanoseconds) : nanoseconds;
+
       if (isNaN(nsInt) || nsInt === 0) return "Recently";
-      
+
       // Convert nanoseconds to milliseconds
       const ms = nsInt / 1000000;
       const date = new Date(ms);
-      
+
       if (isNaN(date.getTime())) return "Recently";
-      
+
       return date.toLocaleDateString();
     } catch (error) {
-      console.warn('Error formatting date:', error);
+      console.warn("Error formatting date:", error);
       return "Recently";
     }
   };
 
+  // Update the handlePurchase function
   const handlePurchase = () => {
-    // TODO: Implement purchase logic
-    alert(`Purchase functionality for ${title} (${nft_price} ICP) - Coming Soon!`);
+    setShowPurchaseModal(true);
+  };
+
+  const handlePurchaseSuccess = (purchasedArtwork) => {
+    // TODO: Update the artwork with buyer information
+    console.log("NFT purchased:", purchasedArtwork);
+    setShowPurchaseModal(false);
+
+    // Optional: Show success toast or redirect
+    alert(`Successfully purchased ${purchasedArtwork.title}!`);
   };
 
   const handleContactArtist = () => {
     if (email && email !== "N/A") {
-      window.open(`mailto:${email}?subject=Inquiry about ${title}`, '_blank');
+      window.open(`mailto:${email}?subject=Inquiry about ${title}`, "_blank");
     }
   };
 
   // Safe conversion for nft_price (might also be BigInt)
-  const safePrice = typeof nft_price === 'bigint' ? Number(nft_price) : (nft_price || 0);
+  const safePrice =
+    typeof nft_price === "bigint" ? Number(nft_price) : nft_price || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with Back Button */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button 
-            onClick={() => navigate('/marketplace')}
+          <button
+            onClick={() => navigate("/marketplace")}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft size={20} />
@@ -113,7 +145,7 @@ const NFTArtCard = () => {
                 className="w-full aspect-square object-cover rounded-xl"
               />
             </div>
-            
+
             {/* Image Details */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -150,8 +182,10 @@ const NFTArtCard = () => {
             {/* Main Info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <h1 className="text-3xl font-bold text-gray-800 mb-3">{title}</h1>
-              <p className="text-gray-600 text-lg leading-relaxed mb-6">{description}</p>
-              
+              <p className="text-gray-600 text-lg leading-relaxed mb-6">
+                {description}
+              </p>
+
               {/* Artist Info */}
               <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-xl">
                 <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
@@ -175,7 +209,7 @@ const NFTArtCard = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag, index) => (
-                      <span 
+                      <span
                         key={index}
                         className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
                       >
@@ -191,14 +225,19 @@ const NFTArtCard = () => {
             <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-gray-100">
               <div className="flex items-center gap-2 mb-4">
                 <Banknote size={20} className="text-green-500" />
-                <span className="text-lg font-semibold text-gray-800">Current Price</span>
+                <span className="text-lg font-semibold text-gray-800">
+                  Current Price
+                </span>
               </div>
-              
+
               <div className="mb-6">
                 <div className="text-4xl font-bold text-gray-800 mb-1">
-                  {safePrice} <span className="text-2xl text-gray-500">ICP</span>
+                  {safePrice}{" "}
+                  <span className="text-2xl text-gray-500">ICP</span>
                 </div>
-                <p className="text-gray-500">≈ ${(safePrice * 10).toFixed(2)} USD</p>
+                <p className="text-gray-500">
+                  ≈ ${(safePrice * 10).toFixed(2)} USD
+                </p>
               </div>
 
               <div className="space-y-3">
@@ -209,7 +248,7 @@ const NFTArtCard = () => {
                   <ShoppingCart size={20} />
                   Buy Now
                 </button>
-                
+
                 {email && email !== "N/A" && (
                   <button
                     onClick={handleContactArtist}
@@ -227,14 +266,18 @@ const NFTArtCard = () => {
                 </div>
                 <div className="flex items-center justify-between text-sm mt-1">
                   <span className="text-gray-500">You will pay</span>
-                  <span className="font-bold">{(safePrice * 1.025).toFixed(2)} ICP</span>
+                  <span className="font-bold">
+                    {(safePrice * 1.025).toFixed(2)} ICP
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Additional Info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-4">Blockchain Details</h3>
+              <h3 className="font-semibold text-gray-800 mb-4">
+                Blockchain Details
+              </h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Blockchain:</span>
@@ -257,6 +300,13 @@ const NFTArtCard = () => {
           </div>
         </div>
       </div>
+
+      <PurchaseModal
+        artwork={artwork}
+        isOpen={showPurchaseModal}
+        onClose={() => setShowPurchaseModal(false)}
+        onPurchaseSuccess={handlePurchaseSuccess}
+      />
     </div>
   );
 };
