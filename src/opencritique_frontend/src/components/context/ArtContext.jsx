@@ -24,9 +24,16 @@ export const ArtProvider = ({ children }) => {
   };
 
 const fetchMyArtworks = async () => {
-  if (myArtworks.length > 0) return;
   try {
     setLoadingMyArts(true);
+    // Check if wallet is connected before making the call
+    const isConnected = await window.ic?.plug?.isConnected?.();
+    if (!isConnected) {
+      console.log("Wallet not connected, skipping artwork fetch");
+      setLoadingMyArts(false);
+      return;
+    }
+    
     const data = await opencritique_backend.get_my_artworks();
     const updated = data.map((art) => ({
       ...art,

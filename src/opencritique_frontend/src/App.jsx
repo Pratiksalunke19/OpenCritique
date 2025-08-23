@@ -13,8 +13,9 @@ import MyStudio from "./components/MyStudio";
 import MarketPlace from "./components/MarketPlace";
 import Dashboard from "./components/Dashboard";
 import { useUserContext } from "./components/context/UserContext";
-import Profile from "./components/user/Profile";
-import CheckProfileCompletion from "./components/user/CheckProfileCompletion";
+
+import TestSupabaseConnection from "./components/TestSupabaseConnection";
+import SupabaseTest from "./components/SupabaseTest";
 
 function App() {
   const { isConnected } = useUserContext();
@@ -47,13 +48,11 @@ function App() {
             path="/"
             element={
               isConnected ? (
-                <CheckProfileCompletion>
-                  <Dashboard />
-                </CheckProfileCompletion>
+                <Dashboard />
               ) : (
                 <div>
-                <LandingPage />
-                <Footer />
+                  <LandingPage />
+                  <Footer />
                 </div>
               )
             }
@@ -61,8 +60,10 @@ function App() {
           <Route path="/trending" element={<Welcome />} />
           <Route path="/upload" element={<UploadForm />} />
           <Route path="/art/:id" element={<ArtCardDetail />} />
-          <Route path="/mystudio" element={<Profile />} />
+          <Route path="/mystudio" element={<MyStudio />} />
           <Route path="/marketplace" element={<MarketPlaceWithPadding />} />
+          <Route path="/test-supabase" element={<TestSupabaseConnection />} />
+          <Route path="/supabase-test" element={<SupabaseTest />} />
         </Routes>
       </div>
 

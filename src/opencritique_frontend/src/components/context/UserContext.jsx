@@ -22,7 +22,7 @@ export const UserProvider = ({ children }) => {
 
   const connectWallet = async () => {
     try {
-      const whitelist = ["<your_canister_id_here>"]; // Replace this with your backend canister ID
+      const whitelist = ["uxrrr-q7777-77774-qaaaq-cai"]; // Your backend canister ID
       const connected = await window.ic?.plug?.requestConnect({ whitelist });
 
       if (connected) {

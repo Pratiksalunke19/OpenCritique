@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function ProfileForm({ principal, onComplete }) {
+export default function ProfileForm({ principal, onComplete, existingProfile = null }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -12,6 +12,22 @@ export default function ProfileForm({ principal, onComplete }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Pre-fill form with existing data
+  useEffect(() => {
+    if (existingProfile) {
+      setIsEditing(true);
+      setFormData({
+        name: existingProfile.name || "",
+        email: existingProfile.email || "",
+        bio: existingProfile.bio || "",
+        image_url: existingProfile.image_url || "",
+        twitter: existingProfile.socials?.twitter || "",
+        instagram: existingProfile.socials?.instagram || "",
+      });
+    }
+  }, [existingProfile]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,7 +49,7 @@ export default function ProfileForm({ principal, onComplete }) {
         .upsert(
           [
             {
-              wallet_address: principal,
+              principal: principal,
               name: formData.name,
               email: formData.email,
               bio: formData.bio,
@@ -42,7 +58,7 @@ export default function ProfileForm({ principal, onComplete }) {
               updated_at: new Date().toISOString(),
             },
           ],
-          { onConflict: ["principal"] } // ensures unique constraint
+          { onConflict: "principal" } // ensures unique constraint
         )
         .select()
         .single();
@@ -51,7 +67,12 @@ export default function ProfileForm({ principal, onComplete }) {
         console.error("Error saving profile:", error);
         setError("Failed to save profile. Please try again.");
       } else {
+        console.log("Profile saved successfully:", data);
         onComplete(data); // Pass saved profile back to parent
+        // Reload page to reflect changes immediately
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (err) {
       console.error("Unexpected error:", err);
@@ -65,7 +86,7 @@ export default function ProfileForm({ principal, onComplete }) {
     <div className="flex items-center justify-center min-h-screen bg-bg-base mt-[70px]">
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
         <h2 className="text-2xl font-bold mb-6 text-center">
-          Complete Your Profile
+          {isEditing ? "Edit Your Profile" : "Complete Your Profile"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -126,7 +147,7 @@ export default function ProfileForm({ principal, onComplete }) {
             disabled={loading}
             className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-lg font-semibold transition"
           >
-            {loading ? "Saving..." : "Save Profile"}
+            {loading ? "Saving..." : (isEditing ? "Update Profile" : "Save Profile")}
           </button>
         </form>
       </div>
