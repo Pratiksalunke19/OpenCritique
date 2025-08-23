@@ -462,6 +462,42 @@ fn is_nft_available(artwork_id: u64) -> Result<bool, String> {
     })
 }
 
+#[update]
+fn mint_nft(artwork_id: u64, nft_price: u64) -> Result<String, String> {
+    let caller_principal = caller();
+    
+    ARTWORKS.with(|artworks| {
+        let mut artworks = artworks.borrow_mut();
+        
+        // Find artwork by id in the Vec
+        match artworks.iter_mut().find(|artwork| artwork.id == artwork_id) {
+            Some(artwork) => {
+                // Check if caller is the author of the artwork
+                if artwork.author != caller_principal {
+                    return Err("Only the artwork creator can mint it as NFT".to_string());
+                }
+                
+                // Check if already minted as NFT
+                if artwork.is_nft {
+                    return Err("This artwork is already minted as an NFT".to_string());
+                }
+                
+                // Mint as NFT
+                artwork.is_nft = true;
+                artwork.nft_price = nft_price;
+                artwork.nft_buyer = String::new(); // Initialize as empty (available for purchase)
+                
+                Ok(format!(
+                    "Successfully minted '{}' as NFT with price {} ICP", 
+                    artwork.title, 
+                    nft_price
+                ))
+            }
+            None => Err("Artwork not found".to_string()),
+        }
+    })
+}
+
 /**************************************************************/
 
 // Enable Candid export

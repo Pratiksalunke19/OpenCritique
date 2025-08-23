@@ -21,6 +21,7 @@ type Artwork = record {
   license : text;
   preview_cid : opt text;
   feedback_bounty : nat64;
+  nft_buyer : text;
 };
 type Bounty = record {
   escrow_subaccount : opt blob;
@@ -46,6 +47,7 @@ type MediaFile = record {
   duration_ms : opt nat64;
   dimensions : opt Dimensions;
 };
+type Result = variant { Ok : bool; Err : text };
 type ResultText = variant { Ok : text; Err : text };
 service : {
   // Claim bounty: author triggers a ledger transfer from escrow -> critic principal.
@@ -62,9 +64,13 @@ service : {
   get_critiques_sorted : (nat64) -> (vec Critique) query;
   get_my_artworks : () -> (vec Artwork) query;
   get_points : (principal) -> (nat64) query;
+  get_user_nfts : (principal) -> (vec Artwork) query;
+  is_nft_available : (nat64) -> (Result) query;
+  mint_nft : (nat64, nat64) -> (ResultText);
   post_critique : (nat64, text) -> ();
   // Prepare a bounty: author only. Stores ledger canister principal and escrow subaccount.
   prepare_bounty : (nat64, nat64, principal) -> (ResultText);
+  set_nft_buyer : (nat64) -> (ResultText);
   upload_art : (
       text,
       text,
@@ -79,6 +85,7 @@ service : {
       opt text,
       bool,
       nat64,
+      text,
     ) -> ();
   upvote_critique : (nat64, nat64) -> ();
   // Withdraw bounty: author attempts to refund any escrow back to themselves.
