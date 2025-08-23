@@ -5,6 +5,9 @@ use std::collections::HashMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
+use ic_cdk::{update, query};
+// use ic_cdk::export::Principal;
+
 pub mod bounty;
 pub use bounty::{Bounty, prepare_bounty, claim_bounty, withdraw_bounty, get_bounty_escrow_account_hex, get_bounty_escrow_balance};
 
@@ -102,6 +105,7 @@ struct Artwork {
     // NFT
     pub is_nft: bool,
     pub nft_price: u64,
+    pub nft_buyer: String,
 
     /* ----- Backwards-compatible metadata fields ----- */
 
@@ -209,6 +213,7 @@ fn upload_art(
     text_excerpt: Option<String>, // optional for text-based works
     is_nft: bool,
     nft_price: u64,
+    nft_buyer: String,
 ) {
     let author = caller();
 
@@ -250,6 +255,7 @@ fn upload_art(
 
         is_nft,
         nft_price,
+        nft_buyer,
 
         // Modern metadata support
         media_type,
@@ -389,6 +395,74 @@ fn get_my_artworks() -> Vec<Artwork> {
             .collect()
     })
 }
+
+/******************* NFT **************************************/
+
+#[update]
+fn set_nft_buyer(artwork_id: u64) -> Result<String, String> {
+    let caller_principal = caller();
+    
+    ARTWORKS.with(|artworks| {
+        let mut artworks = artworks.borrow_mut();
+        
+        match artworks.iter_mut().find(|artwork| artwork.id == artwork_id) {
+            Some(artwork) => {
+                if !artwork.is_nft {
+                    artwork.is_nft= true;
+                }
+                
+                if !artwork.nft_buyer.is_empty() && artwork.nft_buyer != "0" && artwork.nft_buyer != "" {
+                    return Err("This NFT has already been purchased".to_string());
+                }
+                
+                // Use caller automatically
+                artwork.nft_buyer = caller_principal.to_text();
+                
+                Ok(format!(
+                    "Successfully purchased NFT '{}' for buyer: {}", 
+                    artwork.title, 
+                    artwork.nft_buyer
+                ))
+            }
+            None => Err("Artwork not found".to_string()),
+        }
+    })
+}
+
+#[query]
+fn get_user_nfts(user_principal: Principal) -> Vec<Artwork> {
+    ARTWORKS.with(|artworks| {
+        let artworks = artworks.borrow();
+        let user_text = user_principal.to_text();
+        
+        artworks
+            .iter()  // Use .iter() instead of .values() for Vec
+            .filter(|artwork| artwork.is_nft && artwork.nft_buyer == user_text)
+            .cloned()
+            .collect()
+    })
+}
+
+#[query]
+fn is_nft_available(artwork_id: u64) -> Result<bool, String> {
+    ARTWORKS.with(|artworks| {
+        let artworks = artworks.borrow();
+        
+        // Find artwork by id in the Vec
+        match artworks.iter().find(|artwork| artwork.id == artwork_id) {
+            Some(artwork) => {
+                if !artwork.is_nft {
+                    Err("Artwork is not an NFT".to_string())
+                } else {
+                    Ok(artwork.nft_buyer.is_empty() || artwork.nft_buyer == "0")
+                }
+            }
+            None => Err("Artwork not found".to_string()),
+        }
+    })
+}
+
+/**************************************************************/
 
 // Enable Candid export
 ic_cdk::export_candid!();

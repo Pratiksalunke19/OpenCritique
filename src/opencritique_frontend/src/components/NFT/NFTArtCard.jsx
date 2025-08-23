@@ -61,7 +61,11 @@ const NFTArtCard = () => {
     created_at_ns,
     media_type,
     mime_type,
+    nft_buyer
   } = artwork;
+
+   // Check if NFT is sold
+  const isSold = nft_buyer && nft_buyer !== "" && nft_buyer !== "0";
 
   // Fixed formatDate function to handle BigInt
   const formatDate = (nanoseconds) => {
@@ -138,12 +142,24 @@ const NFTArtCard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Image */}
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 shadow-sm relative">
+              {" "}
+              {/* Add 'relative' here */}
               <img
                 src={`${ipfsBase}${image_url}`}
                 alt={title}
-                className="w-full aspect-square object-cover rounded-xl"
+                className={`w-full aspect-square object-cover rounded-xl ${
+                  isSold ? "opacity-75" : ""
+                }`}
               />
+              {/* Sold Out Overlay - Move inside the image container */}
+              {isSold && (
+                <div className="absolute inset-4 bg-black bg-opacity-50 rounded-xl flex items-center justify-center">
+                  <div className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold text-xl transform -rotate-12 shadow-lg">
+                    SOLD OUT
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Image Details */}
