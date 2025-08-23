@@ -14,8 +14,13 @@ const Marketplace = () => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 100 });
   const [sortBy, setSortBy] = useState("Recent");
 
-  const handleArtworkClick = (artworkId) => {
-    navigate(`/artwork/${artworkId}`);
+  // Updated click handler for NFT navigation
+  const handleArtworkClick = (artworkId, isNft) => {
+    if (isNft) {
+      navigate(`/nft/${artworkId}`);
+    } else {
+      navigate(`/artwork/${artworkId}`);
+    }
   };
 
   return (
@@ -60,7 +65,7 @@ const Marketplace = () => {
                     onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
                     className="w-full border rounded px-2 py-1 text-sm"
                   />
-                  <span className="text-xs text-gray-500 ml-1">ETH</span>
+                  <span className="text-xs text-gray-500 ml-1">ICP</span>
                 </div>
                 <span className="text-gray-500 mt-1">to</span>
                 <div className="flex-1">
@@ -71,7 +76,7 @@ const Marketplace = () => {
                     onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
                     className="w-full border rounded px-2 py-1 text-sm"
                   />
-                  <span className="text-xs text-gray-500 ml-1">ETH</span>
+                  <span className="text-xs text-gray-500 ml-1">ICP</span>
                 </div>
               </div>
             </div>
@@ -85,7 +90,7 @@ const Marketplace = () => {
               <div 
                 key={artwork.id} 
                 className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer bg-white"
-                onClick={() => handleArtworkClick(artwork.id)}
+                onClick={() => handleArtworkClick(artwork.id, artwork.is_nft)}
               >
                 {/* Artwork Image */}
                 <div className="aspect-square overflow-hidden">
@@ -106,11 +111,11 @@ const Marketplace = () => {
                     {artwork.username}
                   </p>
                   
-                  {/* Price */}
+                  {/* Price - Updated to use nft_price for NFTs */}
                   <div className="space-y-1">
                     <div className="text-xs text-gray-500">Buy now</div>
                     <div className="font-bold text-sm">
-                      {artwork.bounty || "0"} ICP
+                      {artwork.nft_price || artwork.bounty || "0"} ICP
                     </div>
                   </div>
                 </div>

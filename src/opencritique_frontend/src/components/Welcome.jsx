@@ -91,7 +91,7 @@ const Welcome = () => {
   });
 
   return (
-    <div className="p-6 mt-[100px] ">
+    <div className="p-6 mt-[100px]">
       {/* --- FILTER BAR --- */}
       <div className="flex flex-wrap gap-3 mb-6 justify-start">
         {[

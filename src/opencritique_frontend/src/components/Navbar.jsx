@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Aurora from "./Aurora/Aurora";
 import openCritiqueIcon from "../open_critique_icon.svg";
 import GooeyNav from "./GooeyNav";
+// import {isConnected} from "./context/UserContext"
 
 const Navbar = () => {
   const [connect, updateConnect] = useState(false);
@@ -89,7 +90,7 @@ const Navbar = () => {
             <GooeyNav
               items={[
                 { label: "Home", href: "/" },
-                { label: "Trending", href: "/trending" },
+                ...(!connect ? [{ label: "Trending", href: "/trending" }] : []),
                 { label: "Marketplace", href: "/marketplace" },
                 ...(connect ? [{ label: "My Studio", href: "/mystudio" }] : []),
               ]}

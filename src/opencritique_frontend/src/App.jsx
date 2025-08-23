@@ -15,6 +15,7 @@ import Dashboard from "./components/Dashboard";
 import { useUserContext } from "./components/context/UserContext";
 import Profile from "./components/user/Profile";
 import CheckProfileCompletion from "./components/user/CheckProfileCompletion";
+import NFTArtCard from "./components/NFTArtCard"
 
 function App() {
   const { isConnected } = useUserContext();
@@ -48,12 +49,12 @@ function App() {
             element={
               isConnected ? (
                 <CheckProfileCompletion>
-                  <Dashboard />
+                  <Welcome/>
                 </CheckProfileCompletion>
               ) : (
                 <div>
-                <LandingPage />
-                <Footer />
+                  <LandingPage />
+                  <Footer />
                 </div>
               )
             }
@@ -63,6 +64,8 @@ function App() {
           <Route path="/art/:id" element={<ArtCardDetail />} />
           <Route path="/mystudio" element={<Profile />} />
           <Route path="/marketplace" element={<MarketPlaceWithPadding />} />
+          <Route path="/nft/:id" element={<NFTArtCard />} />
+          <Route path="/artwork/:id" element={<ArtCardDetail />} />
         </Routes>
       </div>
 
