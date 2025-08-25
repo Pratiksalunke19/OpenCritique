@@ -149,6 +149,7 @@ struct Critique {
     text: String,
     upvotes: u64,
     upvoters: Vec<Principal>,
+    is_rewarded: Option<bool>,
 }
 
 thread_local! {

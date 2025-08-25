@@ -13,6 +13,9 @@ use candid::{CandidType, Principal};
 
 use ic_ledger_types::*;
 
+/* for testing purpose */
+const LOCAL_TESTING: bool = true; // Set to false for production
+
 // For local testing, you might want to use a different ledger canister ID
 const LEDGER_CANISTER_ID: Principal = MAINNET_LEDGER_CANISTER_ID;
 const ICP_FEE: u64 = 10_000; // 0.0001 ICP in e8s
@@ -163,16 +166,37 @@ pub async fn transfer_bounty_to_critic(
     }
 
     // Check available balance
-    let available_balance = match get_bounty_balance(artwork_id).await {
-        BountyResult::Success(balance_str) => {
-            balance_str.parse::<u64>().unwrap_or(0)
-        },
-        BountyResult::Error(_) => 0,
-    };
+    // let available_balance = match get_bounty_balance(artwork_id).await {
+    //     BountyResult::Success(balance_str) => {
+    //         balance_str.parse::<u64>().unwrap_or(0)
+    //     },
+    //     BountyResult::Error(_) => 0,
+    // };
 
-    if available_balance < amount + ICP_FEE {
-        return BountyResult::Error(BountyError::InsufficientFunds);
+    // if available_balance < amount + ICP_FEE {
+    //     return BountyResult::Error(BountyError::InsufficientFunds);
+    // }
+
+    /* testing */
+    if LOCAL_TESTING {
+        // Skip balance check and mock the transfer
+        crate::ARTWORKS.with(|artworks| {
+            let mut artworks = artworks.borrow_mut();
+            if let Some(artwork) = artworks.iter_mut().find(|a| a.id == artwork_id) {
+                if let Some(ref mut bounty) = artwork.bounty {
+                    bounty.released = true;
+                    bounty.recipient = Some(critic_principal);
+                }
+            }
+        });
+
+        return BountyResult::Success(format!(
+            "TEST MODE: Successfully transferred {} ICP to critic {}",
+            amount as f64 / 100_000_000.0,
+            critic_principal.to_text()
+        ));
     }
+    /* testing */
 
     // Perform the transfer
     let subaccount = bounty.subaccount.unwrap_or(DEFAULT_SUBACCOUNT);
@@ -434,3 +458,22 @@ pub fn set_artwork_bounty(artwork_id: u64, intended_amount: u64, author: Princip
         recipient: None,
     })
 }
+
+/* testing */
+// debug function to simulate funding
+#[update]
+pub fn mock_fund_bounty(artwork_id: u64, amount: u64) -> BountyResult {
+    // For testing only - simulates receiving funds
+    crate::ARTWORKS.with(|artworks| {
+        let mut artworks = artworks.borrow_mut();
+        if let Some(artwork) = artworks.iter_mut().find(|a| a.id == artwork_id) {
+            if let Some(ref mut bounty) = artwork.bounty {
+                bounty.actual_amount = amount;
+                return BountyResult::Success(format!("Mock funded with {} e8s", amount));
+            }
+        }
+        BountyResult::Error(BountyError::NotFound)
+    })
+}
+
+/* testing */
