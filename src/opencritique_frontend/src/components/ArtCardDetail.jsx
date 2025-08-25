@@ -73,7 +73,7 @@ const ArtCardDetail = () => {
     <div className="min-h-screen p-10 flex flex-col md:flex-col items-center justify-center bg-[#0f172a] text-white mt-[70px]">
       <div className="w-full flex">
         {/* Left side: Artwork Image */}
-        <div className="w-full md:w-1/2 p-4">
+        <div className="w-full md:w-1/2 p-6">
           <img
             src={`${ipfsBase}${image_url}`}
             alt={title}

@@ -13,3 +13,4 @@ candid = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_bytes = "0.11"
 ic-ledger-types = "0.9.0"
+hex = "0.4"  # This is the new dependency causing the issue

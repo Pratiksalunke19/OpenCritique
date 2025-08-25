@@ -1,298 +1,436 @@
-// src/opencritique_backend/src/bounty.rs
-// Bounty module using ic-ledger-types (fixed for types / no '?' misuse).
-use candid::Principal;
-use ic_cdk::api::{caller, id, time};
-use ic_cdk_macros::{query, update};
-use ic_ledger_types::{
-    account_balance, AccountBalanceArgs, AccountIdentifier, Memo, DEFAULT_FEE, DEFAULT_SUBACCOUNT,
-    Subaccount, Timestamp, TransferArgs, Tokens, transfer,
-};
+use ic_cdk::api::{caller, time};
+use ic_cdk::{update, query};
+// use candid::{CandidType, Principal, Nat};
 use serde::{Deserialize, Serialize};
+// use std::collections::HashMap;
+use candid::{CandidType, Principal};
 
-use crate::{ARTWORKS, ResultText};
+// // ICP Ledger types and constants
+// use ic_ledger_types::{
+//     AccountIdentifier, BlockIndex, Memo, Subaccount, Tokens, TransferArgs, TransferError,
+//     DEFAULT_SUBACCOUNT, MAINNET_LEDGER_CANISTER_ID,
+// };
 
-#[derive(Clone, Debug, candid::CandidType, Deserialize, Serialize)]
+use ic_ledger_types::*;
+
+// For local testing, you might want to use a different ledger canister ID
+const LEDGER_CANISTER_ID: Principal = MAINNET_LEDGER_CANISTER_ID;
+const ICP_FEE: u64 = 10_000; // 0.0001 ICP in e8s
+
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Bounty {
-    pub token_ledger: Option<Principal>,
-    pub escrow_subaccount: Option<[u8; 32]>,
-    pub intended_amount: u64, // e8s
+    pub ledger: Principal,
+    pub subaccount: Option<Subaccount>,
+    pub intended_amount: u64, // in e8s (1 ICP = 100_000_000 e8s)
+    pub actual_amount: u64,   // actual amount received
     pub released: bool,
+    pub created_at: u64,
+    pub expires_at: Option<u64>, // optional expiration timestamp
+    pub recipient: Option<Principal>, // who can claim this bounty
 }
 
-impl Bounty {
-    pub fn new(amount_e8s: u64) -> Self {
+impl Default for Bounty {
+    fn default() -> Self {
         Self {
-            token_ledger: None,
-            escrow_subaccount: None,
-            intended_amount: amount_e8s,
+            ledger: LEDGER_CANISTER_ID,
+            subaccount: None,
+            intended_amount: 0,
+            actual_amount: 0,
             released: false,
+            created_at: time(),
+            expires_at: None,
+            recipient: None,
         }
     }
 }
 
-/// Deterministic per-art escrow subaccount (32 bytes)
-fn derive_escrow_subaccount(art_id: u64) -> [u8; 32] {
-    let mut s = [0u8; 32];
-    s[0..8].copy_from_slice(&art_id.to_le_bytes());
-    s[8..16].copy_from_slice(b"OC_ESCRO");
-    s
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct BountyTransferRequest {
+    pub artwork_id: u64,
+    pub critic_principal: Principal,
+    pub amount: u64, // amount to transfer in e8s
 }
 
-/// Prepare a bounty: author only. Stores ledger canister principal and escrow subaccount.
-#[update]
-pub fn prepare_bounty(art_id: u64, amount_e8s: u64, ledger_canister: Principal) -> ResultText {
-    let caller_id = caller();
-
-    ARTWORKS.with(|arts| {
-        let mut artworks = arts.borrow_mut();
-        match artworks.iter_mut().find(|a| a.id == art_id) {
-            Some(art) => {
-                if art.author != caller_id {
-                    return ResultText::Err("Only author can set bounty".to_string());
-                }
-                let mut b = Bounty::new(amount_e8s);
-                b.token_ledger = Some(ledger_canister);
-                b.escrow_subaccount = Some(derive_escrow_subaccount(art_id));
-                art.bounty = Some(b);
-                art.feedback_bounty = amount_e8s;
-                ResultText::Ok("Bounty prepared — send funds to escrow account".to_string())
-            }
-            None => ResultText::Err("Artwork not found".to_string()),
-        }
-    })
+#[derive(CandidType, Serialize, Debug)]
+pub enum BountyError {
+    NotFound,
+    NotAuthorized,
+    AlreadyReleased,
+    InsufficientFunds,
+    TransferFailed(String),
+    InvalidAmount,
+    Expired,
+    NotReady,
 }
 
-/// Claim bounty: author triggers a ledger transfer from escrow -> critic principal.
-/// Returns ResultText (string messages) — no '?' operator used so error type stays ResultText.
-#[update]
-    pub async fn claim_bounty(art_id: u64, critique_id: u64) -> ResultText {
-    let caller_id = caller();
+#[derive(CandidType, Serialize, Debug)]
+pub enum BountyResult {
+    Success(String),
+    Error(BountyError),
+}
 
-    // snapshot state to reduce borrow time
-    let (author, critic_opt, bounty_opt) = ARTWORKS.with(|arts| {
-        let arts = arts.borrow();
-        if let Some(a) = arts.iter().find(|x| x.id == art_id) {
-            let critic = a.critiques.iter().find(|c| c.id == critique_id).map(|c| c.critic);
-            (a.author, critic, a.bounty.clone())
-        } else {
-            (Principal::anonymous(), None, None)
-        }
+// Generate a unique subaccount for each artwork's bounty
+fn generate_bounty_subaccount(artwork_id: u64, author: Principal) -> Subaccount {
+    let mut subaccount = [0u8; 32];
+    let artwork_bytes = artwork_id.to_be_bytes();
+    let author_bytes = author.as_slice();
+    
+    // Combine artwork ID and author principal for uniqueness
+    subaccount[0..8].copy_from_slice(&artwork_bytes);
+    let author_len = std::cmp::min(author_bytes.len(), 24);
+    subaccount[8..8 + author_len].copy_from_slice(&author_bytes[..author_len]);
+    
+    Subaccount(subaccount)
+}
+
+// Get the account identifier for the bounty escrow
+fn get_bounty_account_identifier(artwork_id: u64, author: Principal) -> AccountIdentifier {
+    let subaccount = generate_bounty_subaccount(artwork_id, author);
+    AccountIdentifier::new(&ic_cdk::id(), &subaccount)
+}
+
+/// Prepare a bounty for an artwork (called during upload process)
+#[update]
+pub async fn prepare_bounty(artwork_id: u64, intended_amount: u64) -> BountyResult {
+    let caller_principal = caller();
+    
+    if intended_amount == 0 {
+        return BountyResult::Error(BountyError::InvalidAmount);
+    }
+
+    let subaccount = generate_bounty_subaccount(artwork_id, caller_principal);
+    
+    let _bounty = Bounty {
+        ledger: LEDGER_CANISTER_ID,
+        subaccount: Some(subaccount),
+        intended_amount,
+        actual_amount: 0,
+        released: false,
+        created_at: time(),
+        expires_at: Some(time() + 30 * 24 * 60 * 60 * 1_000_000_000), // 30 days in nanoseconds
+        recipient: None,
+    };
+
+    // Note: The actual transfer happens on the frontend using Plug wallet
+    // This function just prepares the bounty structure
+    BountyResult::Success(format!(
+        "Bounty prepared for artwork {}. Please transfer {} ICP to the escrow account.",
+        artwork_id,
+        intended_amount as f64 / 100_000_000.0
+    ))
+}
+
+/// Transfer bounty to a critic (only artwork author can do this)
+#[update]
+pub async fn transfer_bounty_to_critic(
+    artwork_id: u64,
+    critic_principal: Principal,
+    amount: u64,
+) -> BountyResult {
+    let caller_principal = caller();
+    
+    // Get artwork and verify caller is the author
+    let artwork = crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .find(|a| a.id == artwork_id)
+            .cloned()
     });
 
-    if author == Principal::anonymous() {
-        return ResultText::Err("Artwork not found".to_string());
-    }
-    if caller_id != author {
-        return ResultText::Err("Only author can release bounty".to_string());
+    let artwork = match artwork {
+        Some(art) => art,
+        None => return BountyResult::Error(BountyError::NotFound),
+    };
+
+    if artwork.author != caller_principal {
+        return BountyResult::Error(BountyError::NotAuthorized);
     }
 
-    let bounty = match bounty_opt {
+    let bounty = match &artwork.bounty {
         Some(b) => b,
-        None => return ResultText::Err("No active bounty".to_string()),
+        None => return BountyResult::Error(BountyError::NotFound),
     };
 
     if bounty.released {
-        return ResultText::Err("Bounty already released".to_string());
+        return BountyResult::Error(BountyError::AlreadyReleased);
     }
 
-    let critic = match critic_opt {
-        Some(p) => p,
-        None => return ResultText::Err("Critique not found".to_string()),
-    };
-
-    let ledger = match bounty.token_ledger {
-        Some(l) => l,
-        None => return ResultText::Err("Ledger canister not set for bounty".to_string()),
-    };
-
-    let escrow_bytes = match bounty.escrow_subaccount {
-        Some(s) => s,
-        None => return ResultText::Err("Escrow subaccount missing".to_string()),
-    };
-
-    // wrap as Subaccount
-    let escrow_sub = Subaccount(escrow_bytes);
-    // AccountIdentifier for escrow (owner = this canister)
-    let escrow_account = AccountIdentifier::new(&id(), &escrow_sub);
-
-    // query balance
-    let balance_res = account_balance(ledger, AccountBalanceArgs { account: escrow_account.clone() }).await;
-    let balance_tokens = match balance_res {
-        Ok(t) => t,
-        Err((code, msg)) => {
-            return ResultText::Err(format!("Failed to query escrow balance: {:?} {}", code, msg))
+    // Check if bounty has expired
+    if let Some(expires_at) = bounty.expires_at {
+        if time() > expires_at {
+            return BountyResult::Error(BountyError::Expired);
         }
-    };
-
-    let amount_tokens = Tokens::from_e8s(bounty.intended_amount);
-
-    if balance_tokens < amount_tokens {
-        return ResultText::Err("Escrow has insufficient funds".to_string());
     }
 
-    // Build transfer args (escrow -> critic's default subaccount)
-    let to_account = AccountIdentifier::new(&critic, &DEFAULT_SUBACCOUNT);
-    let transfer_args = TransferArgs {
-        memo: Memo(0),
-        amount: amount_tokens,
-        fee: DEFAULT_FEE,
-        from_subaccount: Some(escrow_sub),
-        to: to_account,
-        created_at_time: Some(Timestamp { timestamp_nanos: time() }),
+    // Check available balance
+    let available_balance = match get_bounty_balance(artwork_id).await {
+        BountyResult::Success(balance_str) => {
+            balance_str.parse::<u64>().unwrap_or(0)
+        },
+        BountyResult::Error(_) => 0,
     };
 
-    // perform transfer
-    let transfer_res = transfer(ledger, transfer_args).await;
+    if available_balance < amount + ICP_FEE {
+        return BountyResult::Error(BountyError::InsufficientFunds);
+    }
 
-    match transfer_res {
-        Ok(Ok(block_index)) => {
-            // mark bounty released
-            ARTWORKS.with(|arts| {
-                let mut artworks = arts.borrow_mut();
-                if let Some(art) = artworks.iter_mut().find(|a| a.id == art_id) {
-                    if let Some(b) = art.bounty.as_mut() {
-                        b.released = true;
+    // Perform the transfer
+    let subaccount = bounty.subaccount.unwrap_or(DEFAULT_SUBACCOUNT);
+    let transfer_args = TransferArgs {
+        memo: Memo(artwork_id),
+        amount: Tokens::from_e8s(amount),
+        fee: Tokens::from_e8s(ICP_FEE),
+        from_subaccount: Some(subaccount),
+        to: AccountIdentifier::new(&critic_principal, &DEFAULT_SUBACCOUNT),
+        created_at_time: None,
+    };
+
+    match ic_cdk::call::<(TransferArgs,), (Result<BlockIndex, TransferError>,)>(
+        LEDGER_CANISTER_ID,
+        "transfer",
+        (transfer_args,),
+    )
+    .await
+    {
+        Ok((Ok(block_index),)) => {
+            // Update bounty status if this was the full amount
+            if amount >= bounty.intended_amount {
+                crate::ARTWORKS.with(|artworks| {
+                    let mut artworks = artworks.borrow_mut();
+                    if let Some(artwork) = artworks.iter_mut().find(|a| a.id == artwork_id) {
+                        if let Some(ref mut bounty) = artwork.bounty {
+                            bounty.released = true;
+                            bounty.recipient = Some(critic_principal);
+                        }
                     }
-                }
-            });
-            ResultText::Ok(format!("Bounty transferred to {} (block index: {})", critic.to_text(), block_index))
+                });
+            }
+
+            BountyResult::Success(format!(
+                "Successfully transferred {} ICP to critic {}. Block index: {}",
+                amount as f64 / 100_000_000.0,
+                critic_principal.to_text(),
+                block_index
+            ))
         }
-        Ok(Err(err)) => ResultText::Err(format!("Ledger transfer returned error: {:?}", err)),
-        Err(call_err) => ResultText::Err(format!("Cross-canister call to ledger failed: {:?}", call_err)),
+        Ok((Err(transfer_error),)) => {
+            BountyResult::Error(BountyError::TransferFailed(format!("{:?}", transfer_error)))
+        }
+        Err((code, msg)) => {
+            BountyResult::Error(BountyError::TransferFailed(format!("Call failed: {}: {}", code as u8, msg)))
+        }
     }
 }
 
-/// Withdraw bounty: author attempts to refund any escrow back to themselves.
-/// If escrow empty, clears metadata.
-#[update]
-pub async fn withdraw_bounty(art_id: u64) -> ResultText {
-    let caller_id = caller();
-
-    let (author, bounty_opt) = ARTWORKS.with(|arts| {
-        let arts = arts.borrow();
-        if let Some(a) = arts.iter().find(|x| x.id == art_id) {
-            (a.author, a.bounty.clone())
-        } else {
-            (Principal::anonymous(), None)
-        }
+/// Get the balance of a bounty escrow account
+#[query]
+pub async fn get_bounty_balance(artwork_id: u64) -> BountyResult {
+    let artwork = crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .find(|a| a.id == artwork_id)
+            .cloned()
     });
 
-    if author == Principal::anonymous() {
-        return ResultText::Err("Artwork not found".to_string());
+    let artwork = match artwork {
+        Some(art) => art,
+        None => return BountyResult::Error(BountyError::NotFound),
+    };
+
+    let account_id = get_bounty_account_identifier(artwork_id, artwork.author);
+
+    match ic_cdk::call::<(AccountIdentifier,), (Tokens,)>(
+        LEDGER_CANISTER_ID,
+        "account_balance",
+        (account_id,),
+    )
+    .await
+    {
+        Ok((balance,)) => {
+            BountyResult::Success(balance.e8s().to_string())
+        }
+        Err((code, msg)) => {
+            BountyResult::Error(BountyError::TransferFailed(format!("Balance check failed: {}: {}", code as u8, msg)))
+        }
     }
-    if caller_id != author {
-        return ResultText::Err("Only author can withdraw bounty".to_string());
+}
+
+/// Get bounty escrow account identifier as hex string (for frontend wallet integration)
+#[query]
+pub fn get_bounty_escrow_account_hex(artwork_id: u64, author: Principal) -> String {
+    let account_id = get_bounty_account_identifier(artwork_id, author);
+    account_id.to_hex()
+}
+
+/// Alternative method to get account identifier in a more readable format
+#[query]  
+pub fn get_bounty_escrow_account_id(artwork_id: u64, author: Principal) -> String {
+    let account_id = get_bounty_account_identifier(artwork_id, author);
+    account_id.to_string()
+}
+
+/// Withdraw remaining bounty funds (only author can do this after expiration or if no critiques)
+#[update]
+pub async fn withdraw_bounty(artwork_id: u64) -> BountyResult {
+    let caller_principal = caller();
+    
+    let artwork = crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .find(|a| a.id == artwork_id)
+            .cloned()
+    });
+
+    let artwork = match artwork {
+        Some(art) => art,
+        None => return BountyResult::Error(BountyError::NotFound),
+    };
+
+    if artwork.author != caller_principal {
+        return BountyResult::Error(BountyError::NotAuthorized);
     }
 
-    let bounty = match bounty_opt {
+    let bounty = match &artwork.bounty {
         Some(b) => b,
-        None => return ResultText::Err("No active bounty to withdraw".to_string()),
+        None => return BountyResult::Error(BountyError::NotFound),
+    };
+
+    // Check if bounty can be withdrawn (expired or no critiques after reasonable time)
+    let can_withdraw = if let Some(expires_at) = bounty.expires_at {
+        time() > expires_at
+    } else {
+        // If no expiration set, allow withdrawal after 7 days with no critiques
+        time() > bounty.created_at + 7 * 24 * 60 * 60 * 1_000_000_000 && artwork.critiques.is_empty()
+    };
+
+    if !can_withdraw && !bounty.released {
+        return BountyResult::Error(BountyError::NotReady);
+    }
+
+    // Get current balance
+    let available_balance = match get_bounty_balance(artwork_id).await {
+        BountyResult::Success(balance_str) => {
+            balance_str.parse::<u64>().unwrap_or(0)
+        },
+        BountyResult::Error(e) => return BountyResult::Error(e),
+    };
+
+    if available_balance <= ICP_FEE {
+        return BountyResult::Error(BountyError::InsufficientFunds);
+    }
+
+    let withdraw_amount = available_balance - ICP_FEE;
+    let subaccount = bounty.subaccount.unwrap_or(DEFAULT_SUBACCOUNT);
+
+    let transfer_args = TransferArgs {
+        memo: Memo(artwork_id),
+        amount: Tokens::from_e8s(withdraw_amount),
+        fee: Tokens::from_e8s(ICP_FEE),
+        from_subaccount: Some(subaccount),
+        to: AccountIdentifier::new(&caller_principal, &DEFAULT_SUBACCOUNT),
+        created_at_time: None,
+    };
+
+    match ic_cdk::call::<(TransferArgs,), (Result<BlockIndex, TransferError>,)>(
+        LEDGER_CANISTER_ID,
+        "transfer", 
+        (transfer_args,),
+    )
+    .await
+    {
+        Ok((Ok(block_index),)) => {
+            BountyResult::Success(format!(
+                "Successfully withdrew {} ICP. Block index: {}",
+                withdraw_amount as f64 / 100_000_000.0,
+                block_index
+            ))
+        }
+        Ok((Err(transfer_error),)) => {
+            BountyResult::Error(BountyError::TransferFailed(format!("{:?}", transfer_error)))
+        }
+        Err((code, msg)) => {
+            BountyResult::Error(BountyError::TransferFailed(format!("Call failed: {}: {}", code as u8, msg)))
+        }
+    }
+}
+
+/// Claim a bounty (for critics - alternative to author transfer)
+#[update]
+pub async fn claim_bounty(artwork_id: u64) -> BountyResult {
+    let caller_principal = caller();
+    
+    // Verify the caller has posted a critique for this artwork
+    let artwork = crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .find(|a| a.id == artwork_id)
+            .cloned()
+    });
+
+    let artwork = match artwork {
+        Some(art) => art,
+        None => return BountyResult::Error(BountyError::NotFound),
+    };
+
+    // Check if caller has critiques on this artwork
+    let has_critique = artwork.critiques.iter().any(|c| c.critic == caller_principal);
+    if !has_critique {
+        return BountyResult::Error(BountyError::NotAuthorized);
+    }
+
+    let bounty = match &artwork.bounty {
+        Some(b) => b,
+        None => return BountyResult::Error(BountyError::NotFound),
     };
 
     if bounty.released {
-        return ResultText::Err("Bounty already released, cannot withdraw".to_string());
+        return BountyResult::Error(BountyError::AlreadyReleased);
     }
 
-    let ledger = match bounty.token_ledger {
-        Some(l) => l,
-        None => return ResultText::Err("Ledger canister not set for bounty".to_string()),
-    };
-
-    let escrow_bytes = match bounty.escrow_subaccount {
-        Some(s) => s,
-        None => return ResultText::Err("Escrow subaccount missing".to_string()),
-    };
-
-    let escrow_sub = Subaccount(escrow_bytes);
-    let escrow_account = AccountIdentifier::new(&id(), &escrow_sub);
-
-    // get balance
-    let balance_res = account_balance(ledger, AccountBalanceArgs { account: escrow_account.clone() }).await;
-    let balance_tokens = match balance_res {
-        Ok(t) => t,
-        Err((code, msg)) => {
-            return ResultText::Err(format!("Failed to query escrow balance: {:?} {}", code, msg))
-        }
-    };
-
-    if balance_tokens == Tokens::from_e8s(0) {
-        // clear metadata
-        ARTWORKS.with(|arts| {
-            let mut artworks = arts.borrow_mut();
-            if let Some(art) = artworks.iter_mut().find(|a| a.id == art_id) {
-                art.bounty = None;
-                art.feedback_bounty = 0;
-            }
-        });
-        return ResultText::Ok("Bounty removed (no funds in escrow)".to_string());
-    }
-
-    // transfer full balance back to author
-    let transfer_args = TransferArgs {
-        memo: Memo(0),
-        amount: balance_tokens.clone(),
-        fee: DEFAULT_FEE,
-        from_subaccount: Some(escrow_sub),
-        to: AccountIdentifier::new(&author, &DEFAULT_SUBACCOUNT),
-        created_at_time: Some(Timestamp { timestamp_nanos: time() }),
-    };
-
-    let transfer_res = transfer(ledger, transfer_args).await;
-
-    match transfer_res {
-        Ok(Ok(block_index)) => {
-            // clear metadata
-            ARTWORKS.with(|arts| {
-                let mut artworks = arts.borrow_mut();
-                if let Some(art) = artworks.iter_mut().find(|a| a.id == art_id) {
-                    art.bounty = None;
-                    art.feedback_bounty = 0;
-                }
-            });
-            ResultText::Ok(format!("Bounty refunded to author (block: {})", block_index))
-        }
-        Ok(Err(err)) => ResultText::Err(format!("Ledger transfer returned error: {:?}", err)),
-        Err(call_err) => ResultText::Err(format!("Cross-canister call to ledger failed: {:?}", call_err)),
-    }
+    // For now, require author approval (they use transfer_bounty_to_critic)
+    // This maintains quality control
+    BountyResult::Error(BountyError::NotAuthorized)
 }
 
-/// Return escrow AccountIdentifier hex for UI (owner = this canister)
+/// Get all bounties for a user (as author)
 #[query]
-pub fn get_bounty_escrow_account_hex(art_id: u64) -> Option<String> {
-    ARTWORKS.with(|arts| {
-        let arts = arts.borrow();
-        arts.iter()
-            .find(|a| a.id == art_id)
-            .and_then(|art| art.bounty.as_ref())
-            .and_then(|b| b.escrow_subaccount.map(|sa| {
-                let s = Subaccount(sa);
-                AccountIdentifier::new(&id(), &s).to_hex()
-            }))
+pub fn get_user_bounties(user: Principal) -> Vec<(u64, Bounty)> {
+    crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .filter(|a| a.author == user && a.bounty.is_some())
+            .map(|a| (a.id, a.bounty.clone().unwrap()))
+            .collect()
     })
 }
 
-/// Query escrow balance for UI (returns e8s as u64). Returns 0 if missing or on error.
+/// Get bounty info for a specific artwork
 #[query]
-pub async fn get_bounty_escrow_balance(art_id: u64) -> u64 {
-    let (ledger_opt, sub_opt) = ARTWORKS.with(|arts| {
-        let arts = arts.borrow();
-        if let Some(a) = arts.iter().find(|x| x.id == art_id) {
-            if let Some(b) = &a.bounty {
-                return (b.token_ledger, b.escrow_subaccount);
-            }
-        }
-        (None, None)
-    });
+pub fn get_artwork_bounty(artwork_id: u64) -> Option<Bounty> {
+    crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .find(|a| a.id == artwork_id)
+            .and_then(|a| a.bounty.clone())
+    })
+}
 
-    let (ledger, sub) = match (ledger_opt, sub_opt) {
-        (Some(l), Some(s)) => (l, s),
-        _ => return 0,
-    };
-
-    let s = Subaccount(sub);
-    let acct = AccountIdentifier::new(&id(), &s);
-    match account_balance(ledger, AccountBalanceArgs { account: acct }).await {
-        Ok(t) => t.e8s(),
-        Err(_) => 0,
+/// Helper function to set bounty for an artwork (called from upload_art)
+pub fn set_artwork_bounty(artwork_id: u64, intended_amount: u64, author: Principal) -> Option<Bounty> {
+    if intended_amount == 0 {
+        return None;
     }
+
+    let subaccount = generate_bounty_subaccount(artwork_id, author);
+    
+    Some(Bounty {
+        ledger: LEDGER_CANISTER_ID,
+        subaccount: Some(subaccount),
+        intended_amount,
+        actual_amount: 0,
+        released: false,
+        created_at: time(),
+        expires_at: Some(time() + 30 * 24 * 60 * 60 * 1_000_000_000), // 30 days
+        recipient: None,
+    })
 }

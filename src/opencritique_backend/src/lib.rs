@@ -1,15 +1,16 @@
 use ic_cdk::api::{caller, time};
-use ic_cdk_macros::*;
+// use ic_cdk_macros::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
+// use ic_ledger_types::{AccountIdentifier, Subaccount};
 
 use ic_cdk::{update, query};
 // use ic_cdk::export::Principal;
 
 pub mod bounty;
-pub use bounty::{Bounty, prepare_bounty, claim_bounty, withdraw_bounty, get_bounty_escrow_account_hex, get_bounty_escrow_balance};
+pub use bounty::{Bounty, prepare_bounty, claim_bounty, withdraw_bounty, get_bounty_escrow_account_hex, get_bounty_balance, BountyResult};
 
 const ADMIN: &str = "aaaaa-aa";
 
@@ -237,7 +238,7 @@ fn upload_art(
         media_files.push(MediaFile::with_role(cid, "original"));
     }
 
-    let new_art = Artwork {
+    let mut new_art = Artwork {
         id: art_id,
         title,
         description,
@@ -267,6 +268,10 @@ fn upload_art(
         media_files,
         created_at_ns: time(),
     };
+
+    if feedback_bounty > 0 {
+        new_art.bounty = crate::bounty::set_artwork_bounty(art_id, feedback_bounty, author);
+    }
 
     ARTWORKS.with(|arts| arts.borrow_mut().push(new_art));
 }

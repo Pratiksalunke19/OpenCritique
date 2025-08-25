@@ -37,3 +37,16 @@ dfx extension install nns
 dfx nns install
 
 npm install react-masonry-css
+
+dfx commands
+    - dfx start --background
+    - dfx start --clean --background
+    - dfx canister create opencritique_backend
+    - dfx canister create opnecritique_frontend
+    - dfx build
+    - dfx deploy
+if cargo updated
+    - cargo update
+identity and principal commands
+    - dfx identity list
+    - dfx identity get-principal
