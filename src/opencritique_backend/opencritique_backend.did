@@ -82,6 +82,7 @@ service : {
   get_critiques_for_user : (principal) -> (vec Critique) query;
   get_critiques_sorted : (nat64) -> (vec Critique) query;
   get_my_artworks : () -> (vec Artwork) query;
+  get_my_artworks_using_principal : (principal) -> (vec Artwork) query;
   get_points : (principal) -> (nat64) query;
   // Get all bounties for a user (as author)
   get_user_bounties : (principal) -> (vec record { nat64; Bounty }) query;

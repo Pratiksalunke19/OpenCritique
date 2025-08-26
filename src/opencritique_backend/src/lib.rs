@@ -487,6 +487,21 @@ fn get_my_artworks() -> Vec<Artwork> {
     })
 }
 
+#[query]
+fn get_my_artworks_using_principal(
+    author_principal: Principal,
+) -> Vec<Artwork> {
+    // let my_id = caller();
+    let my_id = author_principal; // Use passed principal
+    ARTWORKS.with(|arts| {
+        arts.borrow()
+            .iter()
+            .filter(|a| a.author == my_id)
+            .cloned()
+            .collect()
+    })
+}
+
 /******************* NFT **************************************/
 
 #[update]
