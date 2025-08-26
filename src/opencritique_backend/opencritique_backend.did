@@ -24,14 +24,30 @@ type Artwork = record {
   nft_buyer : text;
 };
 type Bounty = record {
-  escrow_subaccount : opt blob;
+  subaccount : opt blob;
+  recipient : opt principal;
+  created_at : nat64;
+  actual_amount : nat64;
   released : bool;
+  ledger : principal;
   intended_amount : nat64;
-  token_ledger : opt principal;
+  expires_at : opt nat64;
 };
+type BountyError = variant {
+  InvalidAmount;
+  NotReady;
+  NotFound;
+  NotAuthorized;
+  TransferFailed : text;
+  AlreadyReleased;
+  Expired;
+  InsufficientFunds;
+};
+type BountyResult = variant { Error : BountyError; Success : text };
 type Critique = record {
   id : nat64;
   upvotes : nat64;
+  is_rewarded : opt bool;
   "text" : text;
   critic : principal;
   art_id : nat64;
@@ -50,27 +66,35 @@ type MediaFile = record {
 type Result = variant { Ok : bool; Err : text };
 type ResultText = variant { Ok : text; Err : text };
 service : {
-  // Claim bounty: author triggers a ledger transfer from escrow -> critic principal.
-  // Returns ResultText (string messages) — no '?' operator used so error type stays ResultText.
-  claim_bounty : (nat64, nat64) -> (ResultText);
+  // Claim a bounty (for critics - alternative to author transfer)
+  claim_bounty : (nat64) -> (BountyResult);
   delete_artwork : (nat64) -> (ResultText);
+  // Get bounty info for a specific artwork
+  get_artwork_bounty : (nat64) -> (opt Bounty) query;
   get_artworks : () -> (vec Artwork) query;
-  // Return escrow AccountIdentifier hex for UI (owner = this canister)
-  get_bounty_escrow_account_hex : (nat64) -> (opt text) query;
-  // Query escrow balance for UI (returns e8s as u64). Returns 0 if missing or on error.
-  get_bounty_escrow_balance : (nat64) -> (nat64) query;
+  // Get the balance of a bounty escrow account
+  get_bounty_balance : (nat64) -> (BountyResult) query;
+  // Get bounty escrow account identifier as hex string (for frontend wallet integration)
+  get_bounty_escrow_account_hex : (nat64, principal) -> (text) query;
+  // Alternative method to get account identifier in a more readable format
+  get_bounty_escrow_account_id : (nat64, principal) -> (text) query;
   get_critiques : (nat64) -> (vec Critique) query;
   get_critiques_for_user : (principal) -> (vec Critique) query;
   get_critiques_sorted : (nat64) -> (vec Critique) query;
   get_my_artworks : () -> (vec Artwork) query;
   get_points : (principal) -> (nat64) query;
+  // Get all bounties for a user (as author)
+  get_user_bounties : (principal) -> (vec record { nat64; Bounty }) query;
   get_user_nfts : (principal) -> (vec Artwork) query;
   is_nft_available : (nat64) -> (Result) query;
   mint_nft : (nat64, nat64) -> (ResultText);
+  mock_fund_bounty : (nat64, nat64) -> (BountyResult);
   post_critique : (nat64, text) -> ();
-  // Prepare a bounty: author only. Stores ledger canister principal and escrow subaccount.
-  prepare_bounty : (nat64, nat64, principal) -> (ResultText);
+  // Prepare a bounty for an artwork (called during upload process)
+  prepare_bounty : (nat64, nat64) -> (BountyResult);
   set_nft_buyer : (nat64) -> (ResultText);
+  // Transfer bounty to a critic (only artwork author can do this)
+  transfer_bounty_to_critic : (nat64, principal, nat64) -> (BountyResult);
   upload_art : (
       text,
       text,
@@ -87,8 +111,24 @@ service : {
       nat64,
       text,
     ) -> ();
+  upload_art_with_principal : (
+      text,
+      text,
+      text,
+      text,
+      text,
+      vec text,
+      nat64,
+      text,
+      opt text,
+      opt text,
+      opt text,
+      bool,
+      nat64,
+      text,
+      principal,
+    ) -> ();
   upvote_critique : (nat64, nat64) -> ();
-  // Withdraw bounty: author attempts to refund any escrow back to themselves.
-  // If escrow empty, clears metadata.
-  withdraw_bounty : (nat64) -> (ResultText);
+  // Withdraw remaining bounty funds (only author can do this after expiration or if no critiques)
+  withdraw_bounty : (nat64) -> (BountyResult);
 }

@@ -5,40 +5,84 @@ const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [principal, setPrincipal] = useState(null);
-  const [principalObj, setPrincipalObj] = useState(null); // Add this
+  const [principalObj, setPrincipalObj] = useState(null);
 
   const checkWalletConnection = async () => {
     try {
-      const connected = await window.ic?.plug?.isConnected();
-      setIsConnected(connected);
+      if (!window.ic?.plug) {
+        console.log("Plug wallet not found");
+        return false;
+      }
 
+      const connected = await window.ic.plug.isConnected();
+      console.log("Plug connected:", connected);
+      
       if (connected) {
         const principalId = await window.ic.plug.agent.getPrincipal();
-        setPrincipalObj(principalId); // Store the Principal object
-        setPrincipal(principalId.toText()); // Store the string version
+        console.log("Principal from Plug:", principalId.toString());
+        
+        setPrincipalObj(principalId);
+        setPrincipal(principalId.toText());
+        setIsConnected(true);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error("Error checking Plug wallet connection:", error);
+      setIsConnected(false);
+      return false;
     }
   };
 
   const connectWallet = async () => {
     try {
-      const whitelist = ["<your_canister_id_here>"]; // Replace with your canister ID
-      const connected = await window.ic?.plug?.requestConnect({ whitelist });
+      if (!window.ic?.plug) {
+        alert("Please install Plug wallet extension");
+        return false;
+      }
+
+      const whitelist = ["bkyz2-fmaaa-aaaaa-qaaaq-cai"];
+      
+      // Add host configuration for local development
+      const host = process.env.NODE_ENV === "development" 
+        ? "http://localhost:4943" 
+        : "https://ic0.app";
+
+      console.log("Connecting to Plug with host:", host);
+
+      const connected = await window.ic.plug.requestConnect({
+        whitelist,
+        host,
+      });
 
       if (connected) {
-        setIsConnected(true);
+        console.log("✅ Plug wallet connected successfully");
+        
         const principalId = await window.ic.plug.agent.getPrincipal();
-        setPrincipalObj(principalId); // Store the Principal object
-        setPrincipal(principalId.toText()); // Store the string version
+        console.log("Connected principal:", principalId.toString());
+
+        setPrincipalObj(principalId);
+        setPrincipal(principalId.toText());
+        setIsConnected(true);
+
+        // ✅ Key Fix: Set the global agent for opencritique_backend
+        if (window.ic.plug.agent) {
+          // This ensures opencritique_backend uses the authenticated agent
+          console.log("✅ Authenticated agent configured");
+        }
+
+        return true;
       }
+      return false;
     } catch (error) {
       console.error("Failed to connect Plug wallet:", error);
+      alert("Failed to connect wallet: " + error.message);
+      return false;
     }
   };
 
   useEffect(() => {
+    // Check connection on page load
     checkWalletConnection();
   }, []);
 
@@ -46,8 +90,9 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider value={{ 
       isConnected, 
       principal, 
-      principalObj, // Expose the Principal object
-      connectWallet 
+      principalObj,
+      connectWallet,
+      checkWalletConnection
     }}>
       {children}
     </UserContext.Provider>

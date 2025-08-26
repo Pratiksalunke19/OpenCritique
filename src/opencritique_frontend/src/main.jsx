@@ -7,7 +7,7 @@ import { ArtProvider } from "./components/context/ArtContext";
 import { UserProvider } from "./components/context/UserContext"; 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <UserProvider>
       <ArtProvider>
         <BrowserRouter>
@@ -15,5 +15,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </BrowserRouter>
       </ArtProvider>
     </UserProvider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

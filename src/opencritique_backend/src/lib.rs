@@ -218,6 +218,7 @@ fn upload_art(
     nft_buyer: String,
 ) {
     let author = caller();
+    ic_cdk::println!("DEBUG: Caller principal: {}", author.to_text());
 
     let art_id = ART_ID_COUNTER.with(|counter| {
         let mut id = counter.borrow_mut();
@@ -225,6 +226,89 @@ fn upload_art(
         *id
     });
 
+    // Detect if input is a CID
+    let is_probable_cid = primary_url_or_cid.starts_with("Qm") || primary_url_or_cid.starts_with("bafy");
+    let main_cid = if is_probable_cid {
+        Some(primary_url_or_cid.clone())
+    } else {
+        None
+    };
+
+    // Prepare media files vector
+    let mut media_files: Vec<MediaFile> = Vec::new();
+    if let Some(cid) = main_cid.clone() {
+        media_files.push(MediaFile::with_role(cid, "original"));
+    }
+
+    let mut new_art = Artwork {
+        id: art_id,
+        title,
+        description,
+
+        image_url: primary_url_or_cid.clone(), // keep for backwards compatibility
+
+        author,
+        username,
+        email,
+        tags,
+        feedback_bounty,
+        license,
+        critiques: vec![],
+        bounty: None, // start with no bounty
+
+        is_nft,
+        nft_price,
+        nft_buyer,
+
+        // Modern metadata support
+        media_type,
+        main_cid,
+        thumbnail_cid: None,
+        preview_cid: None,
+        mime_type,
+        text_excerpt,
+        media_files,
+        created_at_ns: time(),
+    };
+
+    if feedback_bounty > 0 {
+        new_art.bounty = crate::bounty::set_artwork_bounty(art_id, feedback_bounty, author);
+    }
+
+    ARTWORKS.with(|arts| arts.borrow_mut().push(new_art));
+}
+
+// In lib.rs - ADD this new function
+#[update]
+fn upload_art_with_principal(
+    title: String,
+    description: String,
+    primary_url_or_cid: String,
+    username: String,
+    email: String,
+    tags: Vec<String>,
+    feedback_bounty: u64,
+    license: String,
+    media_type: Option<String>,
+    mime_type: Option<String>, 
+    text_excerpt: Option<String>,
+    is_nft: bool,
+    nft_price: u64,
+    nft_buyer: String,
+    author_principal: Principal, // New parameter
+) {
+    let author = author_principal; // Use passed principal
+    
+    // Debug logging
+    let caller_principal = caller();
+    ic_cdk::println!("DEBUG: Caller: {}, Passed author: {}", 
+        caller_principal.to_text(), author.to_text());
+
+    let art_id = ART_ID_COUNTER.with(|counter| {
+        let mut id = counter.borrow_mut();
+        *id += 1;
+        *id
+    });
     // Detect if input is a CID
     let is_probable_cid = primary_url_or_cid.starts_with("Qm") || primary_url_or_cid.starts_with("bafy");
     let main_cid = if is_probable_cid {
@@ -292,6 +376,7 @@ fn post_critique(art_id: u64, text: String) {
                 text,
                 upvotes: 0,
                 upvoters: vec![],
+                is_rewarded: Some(false),
             };
             art.critiques.push(new_critique);
 

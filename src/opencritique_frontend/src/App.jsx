@@ -46,6 +46,19 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  useEffect(() => {
+    // Configure agent for local development
+    if (process.env.NODE_ENV === "development") {
+      // This is crucial for local development
+      import("../../declarations/opencritique_backend").then(async (backend) => {
+        if (backend.opencritique_backend.agent) {
+          await backend.opencritique_backend.agent.fetchRootKey();
+          console.log("✅ Root key fetched for local development");
+        }
+      });
+    }
+  }, []);
+
   return (
     <div className="bg-bg-base min-h-screen text-text-base overflow-x-hidden relative flex flex-col min-h-screen">
       {/* Aurora is now rendered only in the LandingPage hero section */}
@@ -74,7 +87,7 @@ function App() {
           <Route path="/trending" element={<Welcome />} />
           <Route path="/upload" element={<UploadForm />} />
           <Route path="/art/:id" element={<ArtCardDetail />} />
-          <Route path="/mystudio" element={<Profile />} />
+          <Route path="/mystudio" element={<MyStudio />} />
           <Route path="/marketplace" element={<MarketPlaceWithPadding />} />
           <Route path="/nft/:id" element={<NFTArtCard />} />
           <Route path="/artwork/:id" element={<ArtCardDetail />} />

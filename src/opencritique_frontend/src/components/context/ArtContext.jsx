@@ -23,22 +23,33 @@ export const ArtProvider = ({ children }) => {
     }
   };
 
-const fetchMyArtworks = async () => {
-  if (myArtworks.length > 0) return;
-  try {
-    setLoadingMyArts(true);
-    const data = await opencritique_backend.get_my_artworks();
-    const updated = data.map((art) => ({
-      ...art,
-      imageSrc: `${ipfsBase}${art.image_url}`,
-    }));
-    setMyArtworks(updated);
-  } catch (error) {
-    console.error("Failed to fetch user artworks:", error);
-  } finally {
-    setLoadingMyArts(false);
-  }
-};
+  const fetchMyArtworks = async () => {
+    try {
+      // Ensure authenticated call
+      if (!window.ic?.plug?.isConnected()) {
+        console.log("Wallet not connected");
+        setMyArtworks([]);
+        return;
+      }
+
+      // Get authenticated principal
+      const principal = await window.ic.plug.agent.getPrincipal();
+      console.log("Fetching artworks for principal:", principal.toString());
+
+      // Create authenticated actor for the call
+      const authActor = await window.ic.plug.createActor({
+        canisterId: "bkyz2-fmaaa-aaaaa-qaaaq-cai",
+        interfaceFactory: opencritique_backend.idlFactory,
+      });
+
+      const artworks = await authActor.get_my_artworks();
+      console.log("Fetched my artworks:", artworks);
+      setMyArtworks(artworks);
+    } catch (error) {
+      console.error("Error fetching my artworks:", error);
+      setMyArtworks([]);
+    }
+  };
 
   useEffect(() => {
     fetchArtworks();
@@ -46,10 +57,15 @@ const fetchMyArtworks = async () => {
   }, []);
 
   return (
-    // <ArtContext.Provider value={{ artworks, fetchArtworks }}>
-    //   {children}
-    // </ArtContext.Provider>
-    <ArtContext.Provider value={{ artworks, fetchArtworks,myArtworks,fetchMyArtworks,loadingMyArts }}>
+    <ArtContext.Provider
+      value={{
+        artworks,
+        fetchArtworks,
+        myArtworks,
+        fetchMyArtworks,
+        loadingMyArts,
+      }}
+    >
       {children}
     </ArtContext.Provider>
   );
