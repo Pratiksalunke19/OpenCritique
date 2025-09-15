@@ -4,14 +4,15 @@ import { useArtContext } from "./context/ArtContext";
 import { useState } from "react";
 import { opencritique_backend } from "../../../declarations/opencritique_backend";
 import { ThumbsUp, Gift, X } from "lucide-react";
-import { useUserContext } from "./context/UserContext"; // Assuming you have user context
+import { useUserContext } from "./context/UserContext";
 
 const ArtCardDetail = () => {
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
   const { id } = useParams();
   const { artworks } = useArtContext();
-  const { user } = useUserContext(); // Get current user
+  const { user } = useUserContext();
 
+  // State variables
   const [critiqueText, setCritiqueText] = useState("");
   const [critiques, setCritiques] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -22,17 +23,62 @@ const ArtCardDetail = () => {
   const [isRewarding, setIsRewarding] = useState(false);
   const [hoveredCritiqueId, setHoveredCritiqueId] = useState(null);
 
-  const result = 0;
+  // 🔥 NEW: Critical state additions for proper authentication
+  const [userPrincipal, setUserPrincipal] = useState(null);
+  const [bountyBalance, setBountyBalance] = useState(0);
+  const [isLoadingBounty, setIsLoadingBounty] = useState(false);
 
   const artwork = artworks.find((art) => art.id.toString() === id);
+
+  // 🔥 NEW: Get user principal from Plug wallet
+  React.useEffect(() => {
+    const getUserPrincipal = async () => {
+      if (window.ic?.plug?.agent) {
+        try {
+          const principal = await window.ic.plug.agent.getPrincipal();
+          setUserPrincipal(principal);
+          console.log("Current user principal:", principal.toString());
+        } catch (error) {
+          console.error("Error getting principal:", error);
+        }
+      }
+    };
+    getUserPrincipal();
+  }, []);
+
+  // 🔥 NEW: Fetch real-time bounty balance
+  React.useEffect(() => {
+    const fetchBountyBalance = async () => {
+      if (artwork?.bounty && artwork.id) {
+        try {
+          setIsLoadingBounty(true);
+          const balance = await opencritique_backend.get_bounty_balance(
+            Number(artwork.id)
+          );
+          setBountyBalance(Number(balance));
+          console.log("Current bounty balance:", balance);
+        } catch (error) {
+          console.error("Error fetching bounty balance:", error);
+          setBountyBalance(0);
+        } finally {
+          setIsLoadingBounty(false);
+        }
+      }
+    };
+    fetchBountyBalance();
+  }, [artwork?.id]);
 
   React.useEffect(() => {
     fetchCritiques();
   }, [id]);
 
   const fetchCritiques = async () => {
-    const result = await opencritique_backend.get_critiques(Number(id));
-    setCritiques(result);
+    try {
+      const result = await opencritique_backend.get_critiques(Number(id));
+      setCritiques(result);
+    } catch (error) {
+      console.error("Error fetching critiques:", error);
+    }
   };
 
   const handleSubmitCritique = async () => {
@@ -61,14 +107,42 @@ const ArtCardDetail = () => {
   const handleRewardUser = (critique) => {
     setSelectedCritique(critique);
     setShowRewardModal(true);
+    setRewardAmount(""); // Reset amount
   };
 
+  // 🔥 ENHANCED: Better reward submission with validation and feedback
   const handleRewardSubmit = async () => {
-    if (!selectedCritique || !rewardAmount) return;
+    if (!selectedCritique || !rewardAmount) {
+      alert("Please enter a valid reward amount.");
+      return;
+    }
+
+    const amount = parseFloat(rewardAmount);
+    const maxAmount = bountyBalance / 100000000;
+
+    if (amount <= 0) {
+      alert("Please enter a valid amount greater than 0.");
+      return;
+    }
+
+    if (amount > maxAmount) {
+      alert(
+        `Amount exceeds available bounty balance of ${maxAmount.toFixed(
+          8
+        )} ICP.`
+      );
+      return;
+    }
 
     try {
       setIsRewarding(true);
-      const amountInE8s = Math.floor(parseFloat(rewardAmount) * 100000000); // Convert ICP to e8s
+      const amountInE8s = Math.floor(amount * 100000000);
+
+      console.log("Transferring bounty:", {
+        artworkId: Number(id),
+        critic: selectedCritique.critic.toString(),
+        amount: amountInE8s,
+      });
 
       const result = await opencritique_backend.transfer_bounty_to_critic(
         Number(id),
@@ -77,35 +151,47 @@ const ArtCardDetail = () => {
       );
 
       if (result.Success) {
-        alert(`Successfully rewarded ${rewardAmount} ICP to critic!`);
-        fetchCritiques(); // Refresh to update reward status
+        alert(`🎉 Successfully rewarded ${amount} ICP to critic!`);
+
+        // Refresh data
+        fetchCritiques();
+
+        // Update bounty balance
+        const newBalance = await opencritique_backend.get_bounty_balance(
+          Number(id)
+        );
+        setBountyBalance(Number(newBalance));
+
+        // Close modal and reset
         setShowRewardModal(false);
         setRewardAmount("");
         setSelectedCritique(null);
       } else {
-        alert(`Transfer failed: ${result.Error}`);
+        alert(`❌ Transfer failed: ${result.Error}`);
       }
     } catch (error) {
       console.error("Reward transfer error:", error);
-      alert("Failed to transfer reward. Please try again.");
+      alert(
+        "❌ Failed to transfer reward. Please check your connection and try again."
+      );
     } finally {
       setIsRewarding(false);
     }
   };
 
-  // Helper function to get username from principal (you might need to implement this)
   const getUsernameFromPrincipal = (principal) => {
-    // For now, return a shortened version of principal
-    // In production, you might want to store usernames separately or fetch them
     const principalStr = principal.toString();
     return principalStr.substring(0, 8) + "...";
   };
 
-  // Check if current user is the artwork owner
-  const isArtworkOwner = user && artwork && user.toString() === artwork.author.toString();
-  
-  // Check if artwork has bounty available
-  const hasBounty = artwork?.bounty && artwork.bounty.intended_amount > 0 && !artwork.bounty.released;
+  // 🔥 FIXED: Proper ownership check using userPrincipal
+  const isArtworkOwner =
+    userPrincipal &&
+    artwork &&
+    userPrincipal.toString() === artwork.author.toString();
+
+  // 🔥 FIXED: Proper bounty check using real balance
+  const hasBounty = artwork?.bounty && bountyBalance > 0;
 
   if (!artwork) {
     return (
@@ -177,8 +263,8 @@ const ArtCardDetail = () => {
 
             {/* Artwork Details Grid */}
             <div className="grid grid-cols-1 gap-4">
-              {/* Bounty Card */}
-              {artwork.feedback_bounty > 0 && (
+              {/* 🔥 ENHANCED: Bounty Card with real-time balance */}
+              {bountyBalance > 0 && (
                 <div className="bg-gradient-to-r from-green-900/20 to-green-800/20 rounded-xl p-4 border border-green-600/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -186,15 +272,19 @@ const ArtCardDetail = () => {
                         <span className="text-white text-sm">💰</span>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400">Bounty Reward</p>
+                        <p className="text-sm text-gray-400">
+                          Available Bounty
+                        </p>
                         <p className="text-xl font-bold text-green-400">
-                          {(Number(artwork.feedback_bounty) / 100000000).toFixed(4)} ICP
+                          {isLoadingBounty
+                            ? "Loading..."
+                            : `${(bountyBalance / 100000000).toFixed(6)} ICP`}
                         </p>
                       </div>
                     </div>
                     {hasBounty && isArtworkOwner && (
                       <div className="text-xs bg-green-600/20 text-green-400 px-2 py-1 rounded-full">
-                        Available
+                        Ready to Reward
                       </div>
                     )}
                   </div>
@@ -230,29 +320,31 @@ const ArtCardDetail = () => {
               </div>
             </div>
 
-            {/* Action Button */}
-            <div className="pt-4">
-              <button
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex items-center justify-center gap-3 group"
-                onClick={() => setShowForm(true)}
-              >
-                <span className="text-lg">✍️</span>
-                <span className="text-lg">Critique this Artwork</span>
-                <svg
-                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {/* Action Button - Only show for non-owners */}
+            {!isArtworkOwner && (
+              <div className="pt-4">
+                <button
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex items-center justify-center gap-3 group"
+                  onClick={() => setShowForm(true)}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
-              </button>
-            </div>
+                  <span className="text-lg">✍️</span>
+                  <span className="text-lg">Critique this Artwork</span>
+                  <svg
+                    className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
 
             {/* Stats Bar */}
             <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-600/20">
@@ -333,7 +425,7 @@ const ArtCardDetail = () => {
         </div>
       )}
 
-      {/* Reward Modal */}
+      {/* 🔥 ENHANCED: Reward Modal with better validation */}
       {showRewardModal && selectedCritique && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-[#1e293b] w-full max-w-md p-6 rounded-2xl shadow-2xl relative">
@@ -361,34 +453,41 @@ const ArtCardDetail = () => {
                 </label>
                 <input
                   type="number"
-                  step="0.0001"
-                  min="0.0001"
-                  max={(artwork.feedback_bounty / 100000000).toFixed(4)}
+                  step="0.00000001"
+                  min="0.00000001"
+                  max={(bountyBalance / 100000000).toFixed(8)}
                   value={rewardAmount}
                   onChange={(e) => setRewardAmount(e.target.value)}
                   className="w-full p-3 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 transition"
-                  placeholder="0.001"
+                  placeholder="0.00000001"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Max: {(artwork.feedback_bounty / 100000000).toFixed(4)} ICP
+                  Available: {(bountyBalance / 100000000).toFixed(8)} ICP
                 </p>
               </div>
 
+              {/* 🔥 ENHANCED: Better quick amount buttons */}
               <div className="flex gap-2">
                 <button
-                  onClick={() => setRewardAmount("0.001")}
+                  onClick={() => setRewardAmount("0.00000001")}
                   className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
                 >
-                  0.001 ICP
+                  Min Amount
                 </button>
                 <button
-                  onClick={() => setRewardAmount("0.005")}
+                  onClick={() =>
+                    setRewardAmount(
+                      ((bountyBalance / 100000000) * 0.1).toFixed(8)
+                    )
+                  }
                   className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
                 >
-                  0.005 ICP
+                  10% Bounty
                 </button>
                 <button
-                  onClick={() => setRewardAmount((artwork.feedback_bounty / 100000000).toFixed(4))}
+                  onClick={() =>
+                    setRewardAmount((bountyBalance / 100000000).toFixed(8))
+                  }
                   className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
                 >
                   Full Bounty
@@ -397,8 +496,9 @@ const ArtCardDetail = () => {
 
               <div className="bg-gray-700/50 rounded-lg p-3">
                 <p className="text-sm text-gray-300">
-                  <strong>Critique:</strong> "{selectedCritique.text.substring(0, 100)}
-                  {selectedCritique.text.length > 100 ? '...' : ''}"
+                  <strong>Critique:</strong> "
+                  {selectedCritique.text.substring(0, 100)}
+                  {selectedCritique.text.length > 100 ? "..." : ""}"
                 </p>
               </div>
 
@@ -450,9 +550,20 @@ const ArtCardDetail = () => {
         </div>
       )}
 
-      {/* Enhanced Critique List */}
+      {/* 🔥 ENHANCED: Critique List with bounty status header */}
       <div className="mt-8 w-full">
-        <h3 className="text-2xl text-primary mb-4">Community Critiques</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-2xl text-primary">Community Critiques</h3>
+          {isArtworkOwner && hasBounty && (
+            <div className="flex items-center gap-2 bg-green-600/20 text-green-400 px-3 py-1.5 rounded-full text-sm">
+              <Gift size={16} />
+              <span>
+                {(bountyBalance / 100000000).toFixed(4)} ICP available to reward
+              </span>
+            </div>
+          )}
+        </div>
+
         {critiques.length > 0 ? (
           critiques.map((crit) => (
             <div
@@ -466,7 +577,9 @@ const ArtCardDetail = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">
-                      {getUsernameFromPrincipal(crit.critic).charAt(0).toUpperCase()}
+                      {getUsernameFromPrincipal(crit.critic)
+                        .charAt(0)
+                        .toUpperCase()}
                     </span>
                   </div>
                   <div>
@@ -475,27 +588,28 @@ const ArtCardDetail = () => {
                     </p>
                     <p className="text-gray-400 text-xs">Critic</p>
                   </div>
-                  {crit.is_rewarded && (
+                  {/* 🔥 FIXED: Proper reward status check */}
+                  {crit.is_rewarded === true && (
                     <div className="bg-green-600/20 text-green-400 px-2 py-1 rounded-full text-xs flex items-center gap-1">
                       <Gift size={12} />
                       Rewarded
                     </div>
                   )}
                 </div>
-                
-                {/* Reward Button - Show on hover for artwork owner */}
-                {hoveredCritiqueId === crit.id && 
-                 isArtworkOwner && 
-                 hasBounty && 
-                 !crit.is_rewarded && (
-                  <button
-                    onClick={() => handleRewardUser(crit)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 flex items-center gap-2 shadow-lg"
-                  >
-                    <Gift size={14} />
-                    Reward User
-                  </button>
-                )}
+
+                {/* 🔥 FIXED: Proper reward button condition */}
+                {hoveredCritiqueId === crit.id &&
+                  isArtworkOwner &&
+                  hasBounty &&
+                  crit.is_rewarded !== true && (
+                    <button
+                      onClick={() => handleRewardUser(crit)}
+                      className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 flex items-center gap-2 shadow-lg"
+                    >
+                      <Gift size={14} />
+                      Reward User
+                    </button>
+                  )}
               </div>
 
               {/* Critique Text */}
@@ -507,16 +621,14 @@ const ArtCardDetail = () => {
                   onClick={() => handleUpvote(crit.id)}
                   className="bg-primary/20 hover:bg-primary/30 text-primary px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 group/upvote"
                 >
-                  <ThumbsUp 
-                    size={16} 
-                    className="group-hover/upvote:scale-110 transition-transform" 
+                  <ThumbsUp
+                    size={16}
+                    className="group-hover/upvote:scale-110 transition-transform"
                   />
                   <span className="font-medium">{crit.upvotes}</span>
                 </button>
-                
-                <div className="text-xs text-gray-500">
-                  Critique #{crit.id}
-                </div>
+
+                <div className="text-xs text-gray-500">Critique #{crit.id}</div>
               </div>
             </div>
           ))

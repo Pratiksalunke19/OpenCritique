@@ -73,9 +73,9 @@ function App() {
             path="/"
             element={
               isConnected ? (
-                <CheckProfileCompletion>
+                // <CheckProfileCompletion>
                   <Welcome />
-                </CheckProfileCompletion>
+                // </CheckProfileCompletion>
               ) : (
                 <div>
                   <LandingPage />
