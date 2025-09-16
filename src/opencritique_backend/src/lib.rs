@@ -10,7 +10,7 @@ use ic_cdk::{update, query};
 // use ic_cdk::export::Principal;
 
 pub mod bounty;
-pub use bounty::{Bounty, prepare_bounty, claim_bounty, withdraw_bounty, get_bounty_escrow_account_hex, get_bounty_balance, BountyResult};
+pub use bounty::*;
 
 const ADMIN: &str = "aaaaa-aa";
 

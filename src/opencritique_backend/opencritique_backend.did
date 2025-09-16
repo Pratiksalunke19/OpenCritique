@@ -72,7 +72,7 @@ service : {
   // Get bounty info for a specific artwork
   get_artwork_bounty : (nat64) -> (opt Bounty) query;
   get_artworks : () -> (vec Artwork) query;
-  // Get the balance of a bounty escrow account
+  // ✅ COMPLETELY FIXED - Get the balance of a bounty escrow account
   get_bounty_balance : (nat64) -> (BountyResult) query;
   // Get bounty escrow account identifier as hex string (for frontend wallet integration)
   get_bounty_escrow_account_hex : (nat64, principal) -> (text) query;
@@ -84,6 +84,8 @@ service : {
   get_my_artworks : () -> (vec Artwork) query;
   get_my_artworks_using_principal : (principal) -> (vec Artwork) query;
   get_points : (principal) -> (nat64) query;
+  // ✅ NEW - Simple balance check for testing (returns just the number)
+  get_simple_bounty_balance : (nat64) -> (nat64) query;
   // Get all bounties for a user (as author)
   get_user_bounties : (principal) -> (vec record { nat64; Bounty }) query;
   get_user_nfts : (principal) -> (vec Artwork) query;

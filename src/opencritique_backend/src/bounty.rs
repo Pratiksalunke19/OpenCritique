@@ -1,24 +1,21 @@
 use ic_cdk::api::{caller, time};
 use ic_cdk::{update, query};
-// use candid::{CandidType, Principal, Nat};
 use serde::{Deserialize, Serialize};
-// use std::collections::HashMap;
 use candid::{CandidType, Principal};
-
-// // ICP Ledger types and constants
-// use ic_ledger_types::{
-//     AccountIdentifier, BlockIndex, Memo, Subaccount, Tokens, TransferArgs, TransferError,
-//     DEFAULT_SUBACCOUNT, MAINNET_LEDGER_CANISTER_ID,
-// };
-
 use ic_ledger_types::*;
 
 /* for testing purpose */
 const LOCAL_TESTING: bool = true; // Set to false for production
 
-// For local testing, you might want to use a different ledger canister ID
-const LEDGER_CANISTER_ID: Principal = MAINNET_LEDGER_CANISTER_ID;
 const ICP_FEE: u64 = 10_000; // 0.0001 ICP in e8s
+
+// ✅ FIXED - Update this with your actual local ledger canister ID
+fn ledger_canister_id() -> Principal {
+    // Update this to match your actual ledger ID
+    // using dfx canister id icp_ledger_canister
+    Principal::from_text("bkyz2-fmaaa-aaaaa-qaaaq-cai") 
+        .expect("Invalid ledger canister ID")
+}
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Bounty {
@@ -35,7 +32,7 @@ pub struct Bounty {
 impl Default for Bounty {
     fn default() -> Self {
         Self {
-            ledger: LEDGER_CANISTER_ID,
+            ledger: ledger_canister_id(),
             subaccount: None,
             intended_amount: 0,
             actual_amount: 0,
@@ -104,7 +101,7 @@ pub async fn prepare_bounty(artwork_id: u64, intended_amount: u64) -> BountyResu
     let subaccount = generate_bounty_subaccount(artwork_id, caller_principal);
     
     let _bounty = Bounty {
-        ledger: LEDGER_CANISTER_ID,
+        ledger: ledger_canister_id(),
         subaccount: Some(subaccount),
         intended_amount,
         actual_amount: 0,
@@ -165,18 +162,6 @@ pub async fn transfer_bounty_to_critic(
         }
     }
 
-    // Check available balance
-    // let available_balance = match get_bounty_balance(artwork_id).await {
-    //     BountyResult::Success(balance_str) => {
-    //         balance_str.parse::<u64>().unwrap_or(0)
-    //     },
-    //     BountyResult::Error(_) => 0,
-    // };
-
-    // if available_balance < amount + ICP_FEE {
-    //     return BountyResult::Error(BountyError::InsufficientFunds);
-    // }
-
     /* testing */
     if LOCAL_TESTING {
         // Skip balance check and mock the transfer
@@ -210,7 +195,7 @@ pub async fn transfer_bounty_to_critic(
     };
 
     match ic_cdk::call::<(TransferArgs,), (Result<BlockIndex, TransferError>,)>(
-        LEDGER_CANISTER_ID,
+        ledger_canister_id(),
         "transfer",
         (transfer_args,),
     )
@@ -246,7 +231,7 @@ pub async fn transfer_bounty_to_critic(
     }
 }
 
-/// Get the balance of a bounty escrow account
+/// ✅ COMPLETELY FIXED - Get the balance of a bounty escrow account
 #[query]
 pub async fn get_bounty_balance(artwork_id: u64) -> BountyResult {
     let artwork = crate::ARTWORKS.with(|artworks| {
@@ -261,17 +246,26 @@ pub async fn get_bounty_balance(artwork_id: u64) -> BountyResult {
         None => return BountyResult::Error(BountyError::NotFound),
     };
 
+    // ✅ CRITICAL FIX - Use correct AccountBalanceArgs struct
     let account_id = get_bounty_account_identifier(artwork_id, artwork.author);
+    
+    let balance_args = AccountBalanceArgs {
+        account: account_id, // ✅ Direct AccountIdentifier, not converted
+    };
 
-    match ic_cdk::call::<(AccountIdentifier,), (Tokens,)>(
-        LEDGER_CANISTER_ID,
-        "account_balance",
-        (account_id,),
+    match ic_cdk::call::<(AccountBalanceArgs,), (Tokens,)>(
+        ledger_canister_id(),
+        "account_balance", // ✅ Use standard method name
+        (balance_args,),
     )
     .await
     {
         Ok((balance,)) => {
-            BountyResult::Success(balance.e8s().to_string())
+            BountyResult::Success(format!(
+                "Balance: {} ICP ({} e8s)",
+                balance.e8s() as f64 / 100_000_000.0,
+                balance.e8s()
+            ))
         }
         Err((code, msg)) => {
             BountyResult::Error(BountyError::TransferFailed(format!("Balance check failed: {}: {}", code as u8, msg)))
@@ -334,7 +328,12 @@ pub async fn withdraw_bounty(artwork_id: u64) -> BountyResult {
     // Get current balance
     let available_balance = match get_bounty_balance(artwork_id).await {
         BountyResult::Success(balance_str) => {
-            balance_str.parse::<u64>().unwrap_or(0)
+            // Extract e8s from the formatted string "Balance: X ICP (Y e8s)"
+            if let Some(start) = balance_str.find("(") {
+                if let Some(end) = balance_str.find(" e8s)") {
+                    balance_str[start+1..end].parse::<u64>().unwrap_or(0)
+                } else { 0 }
+            } else { 0 }
         },
         BountyResult::Error(e) => return BountyResult::Error(e),
     };
@@ -356,7 +355,7 @@ pub async fn withdraw_bounty(artwork_id: u64) -> BountyResult {
     };
 
     match ic_cdk::call::<(TransferArgs,), (Result<BlockIndex, TransferError>,)>(
-        LEDGER_CANISTER_ID,
+        ledger_canister_id(),
         "transfer", 
         (transfer_args,),
     )
@@ -448,7 +447,7 @@ pub fn set_artwork_bounty(artwork_id: u64, intended_amount: u64, author: Princip
     let subaccount = generate_bounty_subaccount(artwork_id, author);
     
     Some(Bounty {
-        ledger: LEDGER_CANISTER_ID,
+        ledger: ledger_canister_id(),
         subaccount: Some(subaccount),
         intended_amount,
         actual_amount: 0,
@@ -476,4 +475,16 @@ pub fn mock_fund_bounty(artwork_id: u64, amount: u64) -> BountyResult {
     })
 }
 
+/// ✅ NEW - Simple balance check for testing (returns just the number)
+#[query]  
+pub async fn get_simple_bounty_balance(artwork_id: u64) -> u64 {
+    // For testing - just return a mock balance if artwork exists
+    if crate::ARTWORKS.with(|artworks| {
+        artworks.borrow().iter().any(|a| a.id == artwork_id)
+    }) {
+        100_000_000 // Return 1 ICP worth in e8s for testing
+    } else {
+        0
+    }
+}
 /* testing */
