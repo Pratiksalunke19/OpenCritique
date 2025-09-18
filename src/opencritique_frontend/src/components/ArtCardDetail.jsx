@@ -211,50 +211,50 @@ const ArtCardDetail = () => {
   } = artwork;
 
   return (
-    <div className="min-h-screen p-10 flex flex-col md:flex-col items-center justify-center bg-[#0f172a] text-white mt-[70px]">
+    <div className="min-h-screen p-6 md:p-10 flex flex-col md:flex-col items-center justify-center bg-background text-foreground animate-fade-in">
       <div className="w-full flex">
         {/* Left side: Artwork Image */}
-        <div className="w-full md:w-1/2 p-6">
+        <div className="w-full md:w-1/2 p-4 md:p-6">
           <img
             src={`${ipfsBase}${image_url}`}
             alt={title}
-            className="rounded-2xl shadow-lg w-full object-cover max-h-[600px]"
+            className="rounded-2xl shadow-lg w-full object-cover max-h-[600px] border border-border"
           />
         </div>
 
         {/* Right side: Details */}
-        <div className="w-full md:w-1/2 p-6">
-          <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-3xl shadow-2xl p-8 space-y-6 border border-gray-700/30">
+        <div className="w-full md:w-1/2 p-4 md:p-6">
+          <div className="bg-card rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 border border-border animate-slide-up">
             {/* Header Section */}
-            <div className="border-b border-gray-600/50 pb-6">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mb-3">
+            <div className="border-b border-border pb-6">
+              <h1 className="text-3xl md:text-4xl font-heading font-bold gradient-text mb-3">
                 {title}
               </h1>
-              <p className="text-gray-300 text-lg leading-relaxed font-light">
+              <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
                 {description}
               </p>
             </div>
 
             {/* Artist Info Card */}
-            <div className="bg-gray-800/40 backdrop-blur-sm rounded-2xl p-5 border border-gray-600/20">
+            <div className="bg-background/40 backdrop-blur-sm rounded-2xl p-5 border border-border">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">
+                <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center">
+                  <span className="text-foreground font-bold text-sm">
                     {username.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {username}
                   </h3>
-                  <p className="text-sm text-gray-400">Artist</p>
+                  <p className="text-sm text-muted-foreground">Artist</p>
                 </div>
               </div>
 
               {username !== "Anonymous" && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-400">Contact:</span>
-                  <span className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer">
+                  <span className="text-muted-foreground">Contact:</span>
+                  <span className="text-accent hover:text-primary transition-colors cursor-pointer">
                     {email}
                   </span>
                 </div>
@@ -265,14 +265,14 @@ const ArtCardDetail = () => {
             <div className="grid grid-cols-1 gap-4">
               {/* 🔥 ENHANCED: Bounty Card with real-time balance */}
               {bountyBalance > 0 && (
-                <div className="bg-gradient-to-r from-green-900/20 to-green-800/20 rounded-xl p-4 border border-green-600/30">
+                <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-sm">💰</span>
+                        <span className="text-foreground text-sm">💰</span>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           Available Bounty
                         </p>
                         <p className="text-xl font-bold text-green-400">
@@ -293,18 +293,18 @@ const ArtCardDetail = () => {
 
               {/* License & Tags */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-600/20">
+                <div className="bg-background/40 rounded-xl p-4 border border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-blue-400">📜</span>
-                    <span className="text-sm text-gray-400">License</span>
+                    <span className="text-accent">📜</span>
+                    <span className="text-sm text-muted-foreground">License</span>
                   </div>
-                  <p className="text-white font-medium">{license}</p>
+                  <p className="text-foreground font-medium">{license}</p>
                 </div>
 
-                <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-600/20">
+                <div className="bg-background/40 rounded-xl p-4 border border-border">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-purple-400">🏷️</span>
-                    <span className="text-sm text-gray-400">Tags</span>
+                    <span className="text-sm text-muted-foreground">Tags</span>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {tags?.map((tag, index) => (
@@ -324,7 +324,7 @@ const ArtCardDetail = () => {
             {!isArtworkOwner && (
               <div className="pt-4">
                 <button
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex items-center justify-center gap-3 group"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-4 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-center gap-3 group"
                   onClick={() => setShowForm(true)}
                 >
                   <span className="text-lg">✍️</span>
@@ -347,21 +347,21 @@ const ArtCardDetail = () => {
             )}
 
             {/* Stats Bar */}
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-600/20">
+            <div className="bg-background/30 rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Views:</span>
-                  <span className="text-white font-medium">-</span>
+                  <span className="text-muted-foreground">Views:</span>
+                  <span className="text-foreground font-medium">-</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Critiques:</span>
-                  <span className="text-white font-medium">
+                  <span className="text-muted-foreground">Critiques:</span>
+                  <span className="text-foreground font-medium">
                     {critiques.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Listed:</span>
-                  <span className="text-white font-medium">Recently</span>
+                  <span className="text-muted-foreground">Listed:</span>
+                  <span className="text-foreground font-medium">Recently</span>
                 </div>
               </div>
             </div>
@@ -371,23 +371,23 @@ const ArtCardDetail = () => {
 
       {/* Critique Form (Floating Overlay) */}
       {showForm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-[#1e293b] w-full max-w-lg p-6 rounded-2xl shadow-2xl relative transform transition-all duration-300 scale-100 hover:scale-105">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-card w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-border relative">
             <button
               onClick={() => setShowForm(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-white"
+              className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
             >
               ✕
             </button>
 
-            <h2 className="text-xl font-semibold text-white mb-4">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
               Write a Critique
             </h2>
 
             <textarea
               value={critiqueText}
               onChange={(e) => setCritiqueText(e.target.value)}
-              className="w-full p-3 rounded-lg bg-white/90 text-black focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              className="w-full p-3 rounded-lg bg-background text-foreground border border-input focus:outline-none focus:ring-2 focus:ring-primary transition"
               rows={5}
               placeholder="Share your thoughts..."
             />
@@ -395,7 +395,7 @@ const ArtCardDetail = () => {
             <button
               onClick={handleSubmitCritique}
               disabled={isSubmitting}
-              className="mt-4 w-full flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-green-700 transition"
+              className="mt-4 w-full flex items-center justify-center bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium shadow-md hover:bg-primary/90 transition"
             >
               {isSubmitting && (
                 <svg
@@ -427,28 +427,28 @@ const ArtCardDetail = () => {
 
       {/* 🔥 ENHANCED: Reward Modal with better validation */}
       {showRewardModal && selectedCritique && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-[#1e293b] w-full max-w-md p-6 rounded-2xl shadow-2xl relative">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-card w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border relative">
             <button
               onClick={() => setShowRewardModal(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-white"
+              className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
             >
               <X size={20} />
             </button>
 
             <div className="text-center mb-6">
-              <Gift className="mx-auto mb-3 text-yellow-500" size={48} />
-              <h2 className="text-xl font-semibold text-white mb-2">
+              <Gift className="mx-auto mb-3 text-primary" size={48} />
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 Reward Critic
               </h2>
-              <p className="text-gray-400 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Send ICP to {getUsernameFromPrincipal(selectedCritique.critic)}
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Reward Amount (ICP)
                 </label>
                 <input
@@ -458,10 +458,10 @@ const ArtCardDetail = () => {
                   max={(bountyBalance / 100000000).toFixed(8)}
                   value={rewardAmount}
                   onChange={(e) => setRewardAmount(e.target.value)}
-                  className="w-full p-3 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 transition"
+                  className="w-full p-3 rounded-lg bg-background text-foreground border border-input focus:outline-none focus:ring-2 focus:ring-primary transition"
                   placeholder="0.00000001"
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Available: {(bountyBalance / 100000000).toFixed(8)} ICP
                 </p>
               </div>
@@ -494,8 +494,8 @@ const ArtCardDetail = () => {
                 </button>
               </div>
 
-              <div className="bg-gray-700/50 rounded-lg p-3">
-                <p className="text-sm text-gray-300">
+              <div className="bg-background/50 rounded-lg p-3 border border-border">
+                <p className="text-sm text-foreground">
                   <strong>Critique:</strong> "
                   {selectedCritique.text.substring(0, 100)}
                   {selectedCritique.text.length > 100 ? "..." : ""}"
@@ -505,14 +505,14 @@ const ArtCardDetail = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowRewardModal(false)}
-                  className="flex-1 py-3 px-4 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition"
+                  className="flex-1 py-3 px-4 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleRewardSubmit}
                   disabled={isRewarding || !rewardAmount}
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg font-medium hover:from-yellow-600 hover:to-yellow-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="flex-1 py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isRewarding ? (
                     <>

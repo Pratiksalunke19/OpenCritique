@@ -81,18 +81,18 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card border border-border rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 border-b flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-800">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <h2 className="text-2xl font-heading font-bold text-foreground">
             {currentStep === 1 && "Complete Purchase"}
             {currentStep === 2 && "Processing..."}
             {currentStep === 3 && "Purchase Successful!"}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-muted-foreground hover:text-foreground"
             disabled={isProcessing}
           >
             <X size={24} />
@@ -102,7 +102,7 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
         <div className="p-6">
           {/* Error Display */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg">
               {error}
             </div>
           )}
@@ -115,23 +115,23 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                 <img
                   src={`https://gateway.pinata.cloud/ipfs/${artwork.image_url}`}
                   alt={artwork.title}
-                  className="w-20 h-20 rounded-lg object-cover"
+                  className="w-20 h-20 rounded-lg object-cover border border-border"
                 />
                 <div>
-                  <h3 className="font-semibold text-lg">{artwork.title}</h3>
-                  <p className="text-gray-600">by {artwork.username}</p>
+                  <h3 className="font-semibold text-lg text-foreground">{artwork.title}</h3>
+                  <p className="text-muted-foreground">by {artwork.username}</p>
                 </div>
               </div>
 
               {/* Authentication Check */}
               {!isConnected ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-yellow-800 mb-3">
+                <div className="bg-secondary rounded-lg p-4">
+                  <p className="text-secondary-foreground mb-3">
                     Please connect your Plug wallet to purchase this NFT.
                   </p>
                   <button
                     onClick={handleConnectWallet}
-                    className="w-full bg-yellow-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-primary text-primary-foreground px-4 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 interactive-button"
                   >
                     <Wallet size={18} />
                     Connect Plug Wallet
@@ -141,9 +141,9 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                 <>
                   {/* Payment Method */}
                   <div>
-                    <h4 className="font-semibold mb-3">Payment Method</h4>
+                    <h4 className="font-semibold mb-3 text-foreground">Payment Method</h4>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 border-blue-200 bg-blue-50">
+                      <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-background">
                         <input
                           type="radio"
                           name="payment"
@@ -151,13 +151,13 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                           checked={paymentMethod === "wallet"}
                           onChange={(e) => setPaymentMethod(e.target.value)}
                         />
-                        <Wallet size={20} className="text-blue-500" />
+                        <Wallet size={20} className="text-primary" />
                         <div className="flex-1">
-                          <p className="font-medium">Plug Wallet</p>
-                          <p className="text-sm text-gray-500">
+                          <p className="font-medium text-foreground">Plug Wallet</p>
+                          <p className="text-sm text-muted-foreground">
                             Pay with your ICP wallet
                           </p>
-                          <p className="text-xs text-blue-600">
+                          <p className="text-xs text-primary">
                             Connected: {principal?.slice(0, 10)}...
                             {principal?.slice(-6)}
                           </p>
@@ -165,46 +165,46 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 border rounded-lg cursor-not-allowed opacity-50">
+                      <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-not-allowed opacity-50">
                         <input
                           type="radio"
                           name="payment"
                           value="card"
                           disabled
                         />
-                        <CreditCard size={20} className="text-gray-400" />
+                        <CreditCard size={20} className="text-muted-foreground" />
                         <div>
-                          <p className="font-medium text-gray-400">
+                          <p className="font-medium text-muted-foreground">
                             Credit Card
                           </p>
-                          <p className="text-sm text-gray-400">Coming soon</p>
+                          <p className="text-sm text-muted-foreground">Coming soon</p>
                         </div>
                       </label>
                     </div>
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
+                  <div className="bg-background rounded-lg p-4 space-y-2 border border-border">
+                    <div className="flex justify-between text-foreground">
                       <span>NFT Price</span>
                       <span className="font-medium">{safePrice} ICP</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-foreground">
                       <span>Service Fee (2.5%)</span>
                       <span className="font-medium">
                         {serviceFee.toFixed(3)} ICP
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Network Fee</span>
                       <span>~0.001 ICP</span>
                     </div>
                     <hr className="my-2" />
-                    <div className="flex justify-between font-bold text-lg">
+                    <div className="flex justify-between font-bold text-lg text-foreground">
                       <span>Total</span>
                       <span>{totalPrice.toFixed(3)} ICP</span>
                     </div>
-                    <div className="text-xs text-gray-500 text-right">
+                    <div className="text-xs text-muted-foreground text-right">
                       ≈ ${(totalPrice * 12).toFixed(2)} USD
                     </div>
                   </div>
@@ -214,16 +214,16 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                     <input
                       type="checkbox"
                       id="terms"
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
                     />
                     <label
                       htmlFor="terms"
-                      className="text-sm text-gray-600 leading-relaxed"
+                      className="text-sm text-muted-foreground leading-relaxed"
                     >
                       I agree to the{" "}
-                      <span className="text-blue-600 underline cursor-pointer">
+                      <span className="text-primary underline cursor-pointer">
                         Terms of Service
                       </span>{" "}
                       and understand that blockchain transactions are
@@ -236,11 +236,11 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                   <button
                     onClick={handlePurchase}
                     disabled={isProcessing || !termsAccepted}
-                    className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-semibold text-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 interactive-button"
                   >
                     {isProcessing ? (
                       <>
-                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"></div>
                         Processing...
                       </>
                     ) : (
@@ -258,16 +258,16 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
           {/* Step 2: Processing */}
           {currentStep === 2 && (
             <div className="text-center py-8">
-              <div className="animate-spin w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"></div>
-              <h3 className="text-xl font-semibold mb-2">
+              <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full mx-auto mb-6"></div>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">
                 Processing Your Purchase
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Please wait while we confirm your transaction on the Internet
                 Computer...
               </p>
 
-              <div className="space-y-3 text-left bg-gray-50 rounded-lg p-4">
+              <div className="space-y-3 text-left bg-background rounded-lg p-4 border border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span className="text-sm">Validating payment...</span>
@@ -282,7 +282,7 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 mt-4">
+              <p className="text-xs text-muted-foreground mt-4">
                 This may take a few moments. Please don't close this window.
               </p>
             </div>
@@ -291,7 +291,7 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
           {/* Step 3: Success */}
           {currentStep === 3 && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-green-500"
                   fill="none"
@@ -307,31 +307,31 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
                 </svg>
               </div>
 
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              <h3 className="text-2xl font-heading font-bold text-foreground mb-2">
                 Congratulations!
               </h3>
-              <p className="text-gray-600 mb-4">You are now the owner of</p>
-              <p className="text-xl font-semibold text-gray-800 mb-6">
+              <p className="text-muted-foreground mb-4">You are now the owner of</p>
+              <p className="text-xl font-semibold text-foreground mb-6">
                 "{artwork.title}"
               </p>
 
-              <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-800 flex items-center justify-center gap-2">
+              <div className="bg-accent/10 rounded-lg p-4 mb-6">
+                <p className="text-sm text-accent flex items-center justify-center gap-2">
                   <Shield className="w-4 h-4" />
                   Your NFT has been transferred to your wallet and is now
                   visible in your collection.
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-3 mb-6 text-sm">
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-600">Transaction ID:</span>
+              <div className="bg-background rounded-lg p-3 mb-6 text-sm border border-border">
+                <div className="flex justify-between mb-1 text-foreground">
+                  <span className="text-muted-foreground">Transaction ID:</span>
                   <span className="font-mono text-xs">
                     #{artwork.id}-{Date.now()}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Purchased for:</span>
+                <div className="flex justify-between text-foreground">
+                  <span className="text-muted-foreground">Purchased for:</span>
                   <span className="font-semibold">
                     {totalPrice.toFixed(3)} ICP
                   </span>
@@ -341,13 +341,13 @@ const PurchaseModal = ({ artwork, isOpen, onClose, onPurchaseSuccess }) => {
               <div className="space-y-3">
                 <button
                   onClick={() => window.open("/my-studio", "_self")}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors interactive-button"
                 >
                   View in My Collection
                 </button>
                 <button
                   onClick={onClose}
-                  className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="w-full border border-border text-foreground py-3 rounded-lg font-semibold hover:bg-background transition-colors hover-lift"
                 >
                   Continue Shopping
                 </button>

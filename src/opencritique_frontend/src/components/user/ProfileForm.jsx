@@ -62,9 +62,9 @@ export default function ProfileForm({ principal, onComplete }) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bg-base mt-[70px]">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-6 text-center">
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="bg-card border border-border rounded-2xl shadow-lg p-8 max-w-md w-full">
+        <h2 className="text-2xl font-heading font-bold mb-6 text-center text-foreground">
           Complete Your Profile
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -74,7 +74,7 @@ export default function ProfileForm({ principal, onComplete }) {
             placeholder="Name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            className="w-full bg-background border border-input text-foreground rounded-lg p-3"
             required
           />
           <input
@@ -83,7 +83,7 @@ export default function ProfileForm({ principal, onComplete }) {
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            className="w-full bg-background border border-input text-foreground rounded-lg p-3"
             required
           />
           <textarea
@@ -91,7 +91,7 @@ export default function ProfileForm({ principal, onComplete }) {
             placeholder="Bio"
             value={formData.bio}
             onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            className="w-full bg-background border border-input text-foreground rounded-lg p-3"
             rows={3}
           />
           <input
@@ -100,7 +100,7 @@ export default function ProfileForm({ principal, onComplete }) {
             placeholder="Profile Image URL"
             value={formData.image_url}
             onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            className="w-full bg-background border border-input text-foreground rounded-lg p-3"
           />
           <input
             type="text"
@@ -108,7 +108,7 @@ export default function ProfileForm({ principal, onComplete }) {
             placeholder="Twitter handle"
             value={formData.twitter}
             onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            className="w-full bg-background border border-input text-foreground rounded-lg p-3"
           />
           <input
             type="text"
@@ -116,15 +116,15 @@ export default function ProfileForm({ principal, onComplete }) {
             placeholder="Instagram handle"
             value={formData.instagram}
             onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            className="w-full bg-background border border-input text-foreground rounded-lg p-3"
           />
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-destructive text-sm">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-lg font-semibold transition"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-semibold transition"
           >
             {loading ? "Saving..." : "Save Profile"}
           </button>

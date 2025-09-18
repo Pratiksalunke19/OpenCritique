@@ -60,13 +60,13 @@ function App() {
   }, []);
 
   return (
-    <div className="bg-bg-base min-h-screen text-text-base overflow-x-hidden relative flex flex-col min-h-screen">
+    <div className="bg-background min-h-screen text-foreground overflow-x-hidden relative flex flex-col min-h-screen">
       {/* Aurora is now rendered only in the LandingPage hero section */}
       {/* Navbar always above Aurora and hero */}
       <div className="relative z-20">
         <Navbar />
       </div>
-      <div className="flex-grow">
+      <div className="flex-grow pt-20 md:pt-24">
         <Routes>
           {/* <Route path="/" element={ <Dashboard/>}/> */}
           <Route

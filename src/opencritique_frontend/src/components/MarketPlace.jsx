@@ -24,16 +24,16 @@ const Marketplace = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="flex justify-between items-center p-6 border-b">
-        <h1 className="text-3xl font-bold">Shop NFTs</h1>
+      <div className="flex justify-between items-center p-6 border-b border-border animate-fade-in">
+        <h1 className="text-3xl font-heading font-bold">Shop NFTs</h1>
         <div className="flex items-center gap-4">
-          <span className="text-gray-500">{nftArtworks.length.toLocaleString()} Items</span>
+          <span className="text-muted-foreground">{nftArtworks.length.toLocaleString()} Items</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm">Listed:</span>
+            <span className="text-sm text-muted-foreground">Listed:</span>
             <select 
-              className="border rounded px-3 py-1 text-sm"
+              className="bg-background border border-input rounded px-3 py-1 text-sm text-foreground"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -48,12 +48,12 @@ const Marketplace = () => {
 
       <div className="flex">
         {/* Sidebar Filters */}
-        <div className="w-64 h-[100vh] p-6 border-r bg-gray-50 ">
+        <div className="w-64 min-h-[60vh] p-6 border-r border-border bg-card gradient-card animate-slide-in-left">
           {/* Price Filter */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold">Price</h3>
-              <button className="text-sm text-gray-500 underline">Hide</button>
+              <button className="text-sm text-muted-foreground hover:text-foreground underline">Hide</button>
             </div>
             <div className="space-y-3">
               <div className="flex gap-2">
@@ -63,20 +63,20 @@ const Marketplace = () => {
                     placeholder="0.50"
                     value={priceRange.min}
                     onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
-                    className="w-full border rounded px-2 py-1 text-sm"
+                    className="w-full bg-background border border-input rounded px-2 py-1 text-sm"
                   />
-                  <span className="text-xs text-gray-500 ml-1">ICP</span>
+                  <span className="text-xs text-muted-foreground ml-1">ICP</span>
                 </div>
-                <span className="text-gray-500 mt-1">to</span>
+                <span className="text-muted-foreground mt-1">to</span>
                 <div className="flex-1">
                   <input 
                     type="number" 
                     placeholder="1.50"
                     value={priceRange.max}
                     onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
-                    className="w-full border rounded px-2 py-1 text-sm"
+                    className="w-full bg-background border border-input rounded px-2 py-1 text-sm"
                   />
-                  <span className="text-xs text-gray-500 ml-1">ICP</span>
+                  <span className="text-xs text-muted-foreground ml-1">ICP</span>
                 </div>
               </div>
             </div>
@@ -89,7 +89,7 @@ const Marketplace = () => {
             {nftArtworks.map((artwork) => (
               <div 
                 key={artwork.id} 
-                className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer bg-white"
+                className="border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer bg-card interactive-card animate-fade-in"
                 onClick={() => handleArtworkClick(artwork.id, artwork.is_nft)}
               >
                 {/* Artwork Image */}
@@ -97,24 +97,24 @@ const Marketplace = () => {
                   <img 
                     src={`${ipfsBase}${artwork.image_url}`}
                     alt={artwork.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 
                 {/* Artwork Details */}
                 <div className="p-3">
-                  <h3 className="font-semibold text-sm mb-1 truncate">
+                  <h3 className="font-semibold text-sm mb-1 truncate text-foreground">
                     {artwork.title}
                   </h3>
-                  <p className="text-xs text-gray-600 mb-2 flex items-center gap-1">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-accent rounded-full"></span>
                     {artwork.username}
                   </p>
                   
                   {/* Price - Updated to use nft_price for NFTs */}
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-500">Buy now</div>
-                    <div className="font-bold text-sm">
+                    <div className="text-xs text-muted-foreground">Buy now</div>
+                    <div className="font-bold text-sm text-foreground">
                       {artwork.nft_price || artwork.bounty || "0"} ICP
                     </div>
                   </div>
@@ -126,8 +126,8 @@ const Marketplace = () => {
           {/* Empty State */}
           {nftArtworks.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No NFT artworks available</p>
-              <p className="text-gray-400 text-sm mt-2">Check back later for new listings</p>
+              <p className="text-muted-foreground text-lg">No NFT artworks available</p>
+              <p className="text-muted-foreground text-sm mt-2">Check back later for new listings</p>
             </div>
           )}
         </div>

@@ -107,40 +107,40 @@ const UploadForm = () => {
   };
 
   return (
-    <div className="flex justify-center items-center p-10 mt-[70px]">
+    <div className="flex justify-center items-center p-6 md:p-10">
       <form
         onSubmit={handleSubmit}
-        className="max-w-xl w-full bg-[#1e293b] p-8 rounded-2xl shadow-lg space-y-6"
+        className="max-w-xl w-full bg-card border border-border p-6 md:p-8 rounded-2xl shadow-lg space-y-6"
       >
         {/* Wallet Connection Status */}
         {!isConnected ? (
-          <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-4 mb-6">
+          <div className="bg-destructive/10 border border-destructive/30 text-destructive-foreground rounded-lg p-4 mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-yellow-500">⚠️</span>
+              <span className="text-destructive">⚠️</span>
               <div>
-                <p className="text-yellow-400 font-medium">
+                <p className="text-foreground font-medium">
                   Wallet Not Connected
                 </p>
-                <p className="text-yellow-300 text-sm">
+                <p className="text-muted-foreground text-sm">
                   Connect your Plug wallet to upload artwork
                 </p>
               </div>
               <button
                 type="button"
                 onClick={connectWallet}
-                className="ml-auto bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                className="ml-auto bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition interactive-button"
               >
                 Connect Wallet
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-4 mb-6">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-3">
               <span className="text-green-500">✅</span>
               <div>
-                <p className="text-green-400 font-medium">Wallet Connected</p>
-                <p className="text-green-300 text-sm">
+                <p className="text-foreground font-medium">Wallet Connected</p>
+                <p className="text-muted-foreground text-sm">
                   Principal: {principal?.substring(0, 16)}...
                 </p>
               </div>
@@ -155,7 +155,7 @@ const UploadForm = () => {
           placeholder="Artwork Title"
           value={formData.title}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#0f172a] border border-gray-600 text-white focus:border-orange-400 focus:outline-none transition"
+          className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
           required
         />
 
@@ -166,7 +166,7 @@ const UploadForm = () => {
           value={formData.description}
           onChange={handleChange}
           rows={4}
-          className="w-full p-3 rounded-lg bg-[#0f172a] border border-gray-600 text-white focus:border-orange-400 focus:outline-none transition"
+          className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
           required
         />
 
@@ -174,7 +174,7 @@ const UploadForm = () => {
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          className="w-full h-40 flex flex-col items-center justify-center border-2 border-dashed border-gray-500 rounded-xl bg-[#0f172a] cursor-pointer hover:border-orange-400 transition"
+          className="w-full h-40 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl bg-background cursor-pointer hover:border-primary transition"
           onClick={() => document.getElementById("fileInput").click()}
         >
           {formData.artwork ? (
@@ -188,10 +188,10 @@ const UploadForm = () => {
               ) : (
                 <div className="flex flex-col items-center">
                   <span className="text-4xl mb-2">📄</span>
-                  <p className="text-gray-300 font-medium">
+                  <p className="text-foreground font-medium">
                     {formData.artwork.name}
                   </p>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     {(formData.artwork.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -200,10 +200,10 @@ const UploadForm = () => {
           ) : (
             <div className="text-center">
               <span className="text-4xl mb-2">📂</span>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Drag & drop your art here, or click to browse
               </p>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-muted-foreground text-sm mt-1">
                 Supports images, audio, video, text files
               </p>
             </div>
@@ -224,7 +224,7 @@ const UploadForm = () => {
           placeholder="Tags (comma separated) - e.g., digital, abstract, modern"
           value={formData.tags}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#0f172a] border border-gray-600 text-white focus:border-orange-400 focus:outline-none transition"
+          className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
           required
         />
 
@@ -239,10 +239,10 @@ const UploadForm = () => {
               placeholder="Bounty in ICP (optional)"
               value={formData.bounty}
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-[#0f172a] border border-gray-600 text-white focus:border-orange-400 focus:outline-none transition"
+              className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
             />
             {formData.bounty && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 ≈ {(parseFloat(formData.bounty) * 100000000).toLocaleString()}{" "}
                 e8s
               </p>
@@ -254,14 +254,14 @@ const UploadForm = () => {
             placeholder="License (e.g., MIT, CC-BY)"
             value={formData.license}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-[#0f172a] border border-gray-600 text-white focus:border-orange-400 focus:outline-none transition"
+            className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
           />
         </div>
 
         {/* NFT Options */}
-        <div className="bg-gray-800/40 rounded-lg p-4 space-y-3">
+        <div className="bg-background/40 border border-border rounded-lg p-4 space-y-3">
           <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-gray-300">Mint as NFT?</span>
+            <span className="text-foreground">Mint as NFT?</span>
             <input
               type="checkbox"
               name="is_nft"
@@ -269,7 +269,7 @@ const UploadForm = () => {
               onChange={handleChange}
               className="toggle-checkbox sr-only"
             />
-            <div className="w-11 h-6 bg-gray-600 rounded-full relative transition-all peer-checked:bg-orange-500">
+            <div className="w-11 h-6 bg-muted rounded-full relative transition-all peer-checked:bg-primary">
               <div
                 className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${
                   formData.is_nft ? "translate-x-5" : ""
@@ -287,7 +287,7 @@ const UploadForm = () => {
               placeholder="NFT Price in ICP"
               value={formData.nft_price}
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-[#0f172a] border border-gray-600 text-white focus:border-orange-400 focus:outline-none transition"
+              className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
             />
           )}
         </div>
@@ -295,10 +295,10 @@ const UploadForm = () => {
         {/* Anonymous Toggle */}
         <div className="flex items-center justify-between">
           <div>
-            <label className="text-gray-300 font-medium">
+            <label className="text-foreground font-medium">
               Post as anonymous?
             </label>
-            <p className="text-gray-500 text-sm">
+            <p className="text-muted-foreground text-sm">
               Hide your principal ID from public view
             </p>
           </div>
@@ -310,7 +310,7 @@ const UploadForm = () => {
               onChange={handleChange}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:bg-orange-500 transition-all after:content-[''] after:absolute after:left-[4px] after:top-[4px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+            <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary transition-all after:content-[''] after:absolute after:left-[4px] after:top-[4px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
           </label>
         </div>
 
@@ -320,8 +320,8 @@ const UploadForm = () => {
           disabled={loading || !isConnected}
           className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200 ${
             loading || !isConnected
-              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white transform hover:scale-[1.02]"
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-primary hover:bg-primary/90 text-primary-foreground interactive-button"
           }`}
         >
           {loading ? (
@@ -357,7 +357,7 @@ const UploadForm = () => {
         </button>
 
         {/* Help Text */}
-        <div className="text-center text-gray-400 text-sm">
+        <div className="text-center text-muted-foreground text-sm">
           <p>Your artwork will be stored on IPFS via Pinata</p>
           {/* {formData.bounty && (
             // <p className="text-orange-400 mt-1">

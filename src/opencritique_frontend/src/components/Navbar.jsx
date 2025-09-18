@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-
-
-import Aurora from "./Aurora/Aurora";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import openCritiqueIcon from "../open_critique_icon.svg";
 import GooeyNav from "./GooeyNav";
-// import {isConnected} from "./context/UserContext"
+import { cn } from "../lib/utils";
 
 const Navbar = () => {
+  // Preserve existing state and effects
   const [connect, updateConnect] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -19,13 +19,24 @@ const Navbar = () => {
         updateConnect(true);
       }
     };
-
     checkConnection();
+
+    // Add scroll listener for header effect
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      if (offset > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleConnect = async () => {
     const hasAllowed = await window.ic.plug.requestConnect();
-
     if (hasAllowed) {
       updateConnect(true);
       alert("Plug wallet is connected");
@@ -42,142 +53,195 @@ const Navbar = () => {
     navigate("/");
   };
 
+  // Check if a path is active
+  const isActivePath = (path) => {
+    if (path === '/' && location.pathname === '/') return true;
+    if (path !== '/' && location.pathname.startsWith(path)) return true;
+    return false;
+  };
+
   return (
-    <div className="relative">
-      {/* Blur overlay for navbar, covers the nav area and blurs content underneath */}
-      <div className="pointer-events-none fixed top-4 left-4 right-4 z-10 h-[76px] rounded-xl backdrop-blur-md" style={{}}></div>
-      <nav className="fixed top-4 left-4 right-4 z-20 bg-bg-panel bg-opacity-70 text-text-base flex flex-row-reverse md:flex-row items-center justify-between px-6 py-4 border-b border-border shadow-md rounded-xl ">
-        {/* Logo */}
-        <div
-          className="flex items-center space-x-2 cursor-pointer"
+    <header className={cn(
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+      "border-b border-border animate-fade-in",
+      scrolled 
+        ? "bg-background/95 backdrop-blur-xl shadow-lg" 
+        : "bg-background/80 backdrop-blur-md"
+    )}>
+      <nav className="mx-auto flex max-w-7xl items-center justify-between p-4 md:p-6 lg:px-8">
+        {/* Logo with Animation */}
+        <div 
+          className={cn(
+            "flex items-center gap-2 cursor-pointer",
+            "transition-transform duration-300 hover:scale-105"
+          )} 
           onClick={navigateHome}
         >
-          {console.log('opencritique_icon: ',openCritiqueIcon)}
-          <img
-            src={openCritiqueIcon}
-            alt="OpenCritique Icon"
-            className="w-8 h-8 object-contain"
-            style={{ minWidth: 24, minHeight: 24 }}
-          />
-          <span className="text-lg font-semibold">OpenCritique</span>
-        </div>
-
-        {/* Hamburger for mobile, right-aligned */}
-        <div className="md:hidden flex items-center ml-auto">
-          <button
-            className="focus:outline-none"
-            aria-label="Open menu"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <svg
-              className="w-8 h-8 text-primary drop-shadow"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect x="4" y="7" width="16" height="2" rx="1" fill="currentColor" />
-              <rect x="4" y="11" width="16" height="2" rx="1" fill="currentColor" />
-              <rect x="4" y="15" width="16" height="2" rx="1" fill="currentColor" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Right Nav Links and Button */}
-        <div className="flex items-center gap-6 w-full md:w-auto justify-end">
-          {/* GooeyNav replaces nav links on desktop */}
-          <div className="hidden md:flex">
-            <GooeyNav
-              items={[
-                { label: "Home", href: "/" },
-                ...(!connect ? [{ label: "Trending", href: "/trending" }] : []),
-                { label: "Marketplace", href: "/marketplace" },
-                ...(connect ? [{ label: "My Studio", href: "/mystudio" }] : []),
-              ]}
+          <div className="relative">
+            <img
+              src={openCritiqueIcon}
+              alt="OpenCritique Icon"
+              className={cn(
+                "w-8 h-8 object-contain transition-all duration-500",
+                scrolled ? "rotate-12 scale-90" : "rotate-0 scale-100"
+              )}
+              style={{ minWidth: 24, minHeight: 24 }}
             />
+            {/* Animated glow effect */}
+            <div className={cn(
+              "absolute inset-0 rounded-full bg-primary/20 blur-md -z-10",
+              "transition-opacity duration-500",
+              scrolled ? "opacity-100 animate-pulse-glow" : "opacity-0"
+            )} />
           </div>
-          {connect && (
+          <span className={cn(
+            "text-xl md:text-2xl font-heading font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent",
+            "transition-all duration-300",
+            scrolled ? "tracking-tight" : "tracking-normal"
+          )}>
+            OpenCritique
+          </span>
+        </div>
+
+        {/* Desktop Nav */}
+        <div className="hidden md:flex md:gap-x-2">
+          <GooeyNav
+            items={[
+              { label: "Home", href: "/" },
+              ...(!connect ? [{ label: "Trending", href: "/trending" }] : []),
+              { label: "Marketplace", href: "/marketplace" },
+              ...(connect ? [{ label: "My Studio", href: "/mystudio" }] : []),
+            ]}
+          />
+        </div>
+
+        {/* Desktop Actions with Animation */}
+        <div className="hidden md:flex items-center gap-3">
+          {connect ? (
             <button
-              className="border border-primary text-primary hover:bg-primary hover:text-white transition-colors px-4 py-2 rounded-md md:inline-block hidden"
+              className={cn(
+                "px-4 py-2 rounded-lg border border-border text-foreground",
+                "hover:bg-primary/10 hover:text-primary transition-all duration-300",
+                "hover:border-primary/50 hover:shadow-md hover:shadow-primary/10",
+                "interactive-button"
+              )}
               onClick={handleUploadClick}
             >
               Upload
             </button>
-          )}
-          {/* Show Connect with Wallet only on desktop */}
-          {!connect && (
+          ) : (
             <button
-              className="border border-primary text-primary hover:bg-primary hover:text-white transition-colors px-4 py-2 rounded-md md:inline-block hidden"
+              className={cn(
+                "px-4 py-2 rounded-lg gradient-primary text-primary-foreground",
+                "hover:opacity-90 transition-all duration-300",
+                "shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30",
+                "interactive-button"
+              )}
               onClick={handleConnect}
             >
-              Connect with Wallet
+              <span className="relative z-10">Connect Wallet</span>
             </button>
           )}
         </div>
 
-        {/* Mobile Dropdown */}
-        {menuOpen && (
-          <div className="absolute top-full right-0 mt-2 w-48 bg-bg-panel bg-opacity-95 rounded-xl shadow-lg border border-border flex flex-col animate-fadeIn z-50 overflow-hidden">
-            <Link
-              to="/"
-              className="px-6 py-3 text-base font-medium text-white hover:bg-primary/30 hover:text-primary focus:bg-primary/40 focus:text-primary transition-all duration-200 outline-none glow-nav"
+        {/* Mobile Menu Button with Animation */}
+        <div className="md:hidden">
+          <button
+            className={cn(
+              "-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-foreground",
+              "hover:bg-primary/10 hover:text-primary transition-colors duration-300"
+            )}
+            aria-label="Open menu"
+            onClick={() => setMenuOpen(true)}
+          >
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Drawer with Animation */}
+      {menuOpen && (
+        <div className="md:hidden fixed inset-y-0 right-0 z-50 w-full sm:max-w-sm bg-background/95 backdrop-blur-xl px-6 py-6 border-l border-border animate-slide-in-right">
+          <div className="flex items-center justify-between">
+            <div 
+              className="flex items-center gap-2 cursor-pointer transition-transform duration-300 hover:scale-105" 
+              onClick={() => { setMenuOpen(false); navigateHome(); }}
+            >
+              <img src={openCritiqueIcon} alt="OpenCritique" className="w-8 h-8" />
+              <span className="text-xl font-heading font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                OpenCritique
+              </span>
+            </div>
+            <button
+              type="button"
+              className={cn(
+                "-m-2.5 rounded-md p-2.5 text-foreground",
+                "hover:bg-primary/10 hover:text-primary transition-colors duration-300"
+              )}
               onClick={() => setMenuOpen(false)}
             >
-              Home
-            </Link>
-            <Link
-              to="/trending"
-              className="px-6 py-3 text-base font-medium text-white hover:bg-primary/30 hover:text-primary focus:bg-primary/40 focus:text-primary transition-all duration-200 outline-none glow-nav"
-              onClick={() => setMenuOpen(false)}
-            >
-              Trending
-            </Link>
-            <Link
-              to="/marketplace"
-              className="px-6 py-3 text-base font-medium text-white hover:bg-primary/30 hover:text-primary focus:bg-primary/40 focus:text-primary transition-all duration-200 outline-none glow-nav"
-              onClick={() => setMenuOpen(false)}
-            >
-              Marketplace
-            </Link>
-            {connect && (
+              <span className="sr-only">Close menu</span>
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="mt-6 space-y-2">
+            {[
+              { label: "Home", path: "/" },
+              { label: "Trending", path: "/trending" },
+              { label: "Marketplace", path: "/marketplace" },
+              ...(connect ? [{ label: "My Studio", path: "/mystudio" }] : []),
+            ].map((item, index) => (
               <Link
-                to="/mystudio"
-                className="px-6 py-3 text-base font-medium text-white hover:bg-primary/30 hover:text-primary focus:bg-primary/40 focus:text-primary transition-all duration-200 outline-none glow-nav"
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "block rounded-lg px-3 py-2 text-base font-medium transition-all duration-300",
+                  "animate-fade-in",
+                  isActivePath(item.path) 
+                    ? "bg-primary/20 text-primary border border-primary/30 nav-active" 
+                    : "text-foreground hover:bg-primary/10 hover:text-primary"
+                )}
+                style={{ animationDelay: `${index * 0.05}s` }}
                 onClick={() => setMenuOpen(false)}
               >
-                My Studio
+                {item.label}
               </Link>
-            )}
-            {connect ? (
-              <button
-                className="m-3 border border-primary text-primary hover:bg-primary hover:text-white transition-colors px-4 py-2 rounded-md"
-                onClick={() => { setMenuOpen(false); handleUploadClick(); }}
-              >
-                Upload
-              </button>
-            ) : (
-              <button
-                className="m-3 border border-primary text-primary hover:bg-primary hover:text-white transition-colors px-4 py-2 rounded-md"
-                onClick={() => { setMenuOpen(false); handleConnect(); }}
-              >
-                Connect with Wallet
-              </button>
-            )}
+            ))}
+            
+            <div className="pt-4 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+              {connect ? (
+                <button
+                  className={cn(
+                    "w-full px-4 py-2 rounded-lg border border-border text-foreground",
+                    "hover:bg-primary/10 hover:text-primary transition-all duration-300",
+                    "hover:border-primary/50 hover:shadow-md hover:shadow-primary/10"
+                  )}
+                  onClick={() => { setMenuOpen(false); handleUploadClick(); }}
+                >
+                  Upload
+                </button>
+              ) : (
+                <button
+                  className={cn(
+                    "w-full px-4 py-2 rounded-lg gradient-primary text-primary-foreground",
+                    "hover:opacity-90 transition-all duration-300",
+                    "shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30"
+                  )}
+                  onClick={() => { setMenuOpen(false); handleConnect(); }}
+                >
+                  Connect Wallet
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </nav>
-      {/* Dropdown animation keyframes and glow effect */}
-      <style>{`
-        @keyframes fadeIn {
-          0% { opacity: 0; transform: translateY(-10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.25s cubic-bezier(.4,0,.2,1); }
-        .glow-nav:hover, .glow-nav:focus {
-          box-shadow: 0 0 8px 2px #ff9100, 0 0 16px 4px #ff9100;
-        }
-      `}</style>
-    </div>
+        </div>
+      )}
+    </header>
   );
 };
 
