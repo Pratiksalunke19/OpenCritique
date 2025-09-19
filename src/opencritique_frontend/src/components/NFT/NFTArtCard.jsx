@@ -30,9 +30,9 @@ const NFTArtCard = () => {
 
   if (!artwork) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-2xl font-bold text-gray-600 mb-2">
             NFT Not Found
           </h2>
           <p className="text-gray-600 mb-4">
@@ -116,9 +116,9 @@ const NFTArtCard = () => {
     typeof nft_price === "bigint" ? Number(nft_price) : nft_price || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header with Back Button */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-card sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate("/marketplace")}
@@ -142,7 +142,7 @@ const NFTArtCard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Image */}
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-4 shadow-sm relative">
+            <div className="bg-card rounded-2xl p-4 shadow-sm relative">
               {" "}
               {/* Add 'relative' here */}
               <img
@@ -163,8 +163,8 @@ const NFTArtCard = () => {
             </div>
 
             {/* Image Details */}
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <div className="bg-card rounded-xl p-4 shadow-sm">
+              <h3 className="font-semibold text-gray-600 mb-3 flex items-center gap-2">
                 <FileText size={18} />
                 Artwork Details
               </h3>
@@ -196,20 +196,20 @@ const NFTArtCard = () => {
           {/* Right Side - Details */}
           <div className="space-y-6">
             {/* Main Info */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h1 className="text-3xl font-bold text-gray-800 mb-3">{title}</h1>
-              <p className="text-gray-600 text-lg leading-relaxed mb-6">
+            <div className="bg-card rounded-2xl p-6 shadow-sm">
+              <h1 className="text-3xl font-bold mb-3">{title}</h1>
+              <p className="text-gray-300 text-lg leading-relaxed mb-6">
                 {description}
               </p>
 
               {/* Artist Info */}
-              <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3 mb-6 p-4 bg-card rounded-xl border-2 border-border">
                 <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
                   <User className="text-white" size={20} />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Created by</p>
-                  <p className="font-semibold text-gray-800 flex items-center gap-2">
+                  <p className="flex items-center gap-2">
                     {username}
                     <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                   </p>
@@ -218,7 +218,7 @@ const NFTArtCard = () => {
 
               {/* Tags */}
               {tags && tags.length > 0 && (
-                <div className="mb-6">
+                <div className="mb-6 ">
                   <div className="flex items-center gap-2 mb-3">
                     <Tag size={16} className="text-gray-500" />
                     <span className="text-sm text-gray-500">Tags</span>
@@ -238,16 +238,16 @@ const NFTArtCard = () => {
             </div>
 
             {/* Purchase Section */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-gray-100">
+            <div className="bg-card rounded-2xl p-6 shadow-sm ">
               <div className="flex items-center gap-2 mb-4">
                 <Banknote size={20} className="text-green-500" />
-                <span className="text-lg font-semibold text-gray-800">
+                <span className="text-lg font-semibold text-gray-600">
                   Current Price
                 </span>
               </div>
 
               <div className="mb-6">
-                <div className="text-4xl font-bold text-gray-800 mb-1">
+                <div className="text-4xl font-bold mb-1">
                   {safePrice}{" "}
                   <span className="text-2xl text-gray-500">ICP</span>
                 </div>
@@ -268,14 +268,14 @@ const NFTArtCard = () => {
                 {email && email !== "N/A" && (
                   <button
                     onClick={handleContactArtist}
-                    className="w-full border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                    className="w-full border-2 border-border text-gray-700 py-3 rounded-xl font-semibold hover:border-gray-400 hover:bg-gray-50 transition-colors"
                   >
                     Contact Artist
                   </button>
                 )}
               </div>
 
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+              <div className="mt-6 p-4 bg-card border-2 border-border rounded-xl">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Service fee</span>
                   <span className="font-medium">2.5%</span>
@@ -290,8 +290,8 @@ const NFTArtCard = () => {
             </div>
 
             {/* Additional Info */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-4">
+            <div className="bg-card rounded-2xl p-6 shadow-sm">
+              <h3 className="font-semibold text-gray-600 mb-4">
                 Blockchain Details
               </h3>
               <div className="space-y-3 text-sm">

@@ -24,7 +24,7 @@ const Marketplace = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="flex justify-between items-center p-6 border-b border-border animate-fade-in">
         <h1 className="text-3xl font-heading font-bold">Shop NFTs</h1>
