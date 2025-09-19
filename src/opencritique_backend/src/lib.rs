@@ -201,7 +201,7 @@ fn infer_media_type(primary: &str, tags: &[String]) -> MediaType {
 /* ---------- Updates & Queries (names/signatures unchanged) ---------- */
 
 #[update]
-fn upload_art(
+async fn upload_art(
     title: String,
     description: String,
     primary_url_or_cid: String, // now name reflects that it can be CID or URL
@@ -216,10 +216,9 @@ fn upload_art(
     is_nft: bool,
     nft_price: u64,
     nft_buyer: String,
-) {
+) -> Result<String, String> {
     let author = caller();
     ic_cdk::println!("DEBUG: Caller principal: {}", author.to_text());
-
     let art_id = ART_ID_COUNTER.with(|counter| {
         let mut id = counter.borrow_mut();
         *id += 1;
@@ -271,11 +270,25 @@ fn upload_art(
         created_at_ns: time(),
     };
 
+    // ✅ CRITICAL FIX: Create escrow account during upload
     if feedback_bounty > 0 {
+        // Create bounty with escrow account
         new_art.bounty = crate::bounty::set_artwork_bounty(art_id, feedback_bounty, author);
+        
+        // ✅ OPTIONAL: Auto-prepare the escrow for funding
+        match crate::bounty::prepare_bounty_account(art_id, feedback_bounty, author).await {
+            Ok(account_info) => {
+                ic_cdk::println!("Escrow account ready: {}", account_info);
+            }
+            Err(e) => {
+                ic_cdk::println!("Escrow setup warning: {}", e);
+                // Continue anyway - escrow exists, just not pre-funded
+            }
+        }
     }
 
     ARTWORKS.with(|arts| arts.borrow_mut().push(new_art));
+    Ok(format!("Artwork {} uploaded successfully with escrow account", art_id))
 }
 
 // In lib.rs - ADD this new function

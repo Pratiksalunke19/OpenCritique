@@ -600,7 +600,7 @@ const ArtCardDetail = () => {
                 {/* 🔥 FIXED: Proper reward button condition */}
                 {hoveredCritiqueId === crit.id &&
                   isArtworkOwner &&
-                  hasBounty &&
+                  // hasBounty &&
                   crit.is_rewarded !== true && (
                     <button
                       onClick={() => handleRewardUser(crit)}

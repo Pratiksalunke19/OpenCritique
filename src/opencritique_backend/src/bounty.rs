@@ -488,3 +488,44 @@ pub async fn get_simple_bounty_balance(artwork_id: u64) -> u64 {
     }
 }
 /* testing */
+
+/// ✅ NEW: Prepare escrow account and return funding info
+#[update]
+pub async fn prepare_bounty_account(
+    artwork_id: u64, 
+    intended_amount: u64, 
+    author: Principal
+) -> Result<String, String> {
+    
+    // Generate the escrow account
+    let account_id = get_bounty_account_identifier(artwork_id, author);
+    let account_hex = account_id.to_hex();
+    
+    // Return funding instructions
+    Ok(format!(
+        "Escrow account created for artwork {}. Transfer {} ICP to: {}",
+        artwork_id,
+        intended_amount as f64 / 100_000_000.0,
+        account_hex
+    ))
+}
+
+/// ✅ NEW: Get escrow account without requiring author parameter (uses artwork data)
+#[query]
+pub async fn get_artwork_escrow_account(artwork_id: u64) -> Result<String, String> {
+    let artwork = crate::ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .find(|a| a.id == artwork_id)
+            .cloned()
+    });
+
+    match artwork {
+        Some(art) => {
+            let account_id = get_bounty_account_identifier(artwork_id, art.author);
+            Ok(account_id.to_hex())
+        }
+        None => Err("Artwork not found".to_string())
+    }
+}
+

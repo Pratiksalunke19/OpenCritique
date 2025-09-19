@@ -71,6 +71,8 @@ service : {
   delete_artwork : (nat64) -> (ResultText);
   // Get bounty info for a specific artwork
   get_artwork_bounty : (nat64) -> (opt Bounty) query;
+  // ✅ NEW: Get escrow account without requiring author parameter (uses artwork data)
+  get_artwork_escrow_account : (nat64) -> (ResultText) query;
   get_artworks : () -> (vec Artwork) query;
   // ✅ COMPLETELY FIXED - Get the balance of a bounty escrow account
   get_bounty_balance : (nat64) -> (BountyResult) query;
@@ -95,6 +97,8 @@ service : {
   post_critique : (nat64, text) -> ();
   // Prepare a bounty for an artwork (called during upload process)
   prepare_bounty : (nat64, nat64) -> (BountyResult);
+  // ✅ NEW: Prepare escrow account and return funding info
+  prepare_bounty_account : (nat64, nat64, principal) -> (ResultText);
   set_nft_buyer : (nat64) -> (ResultText);
   // Transfer bounty to a critic (only artwork author can do this)
   transfer_bounty_to_critic : (nat64, principal, nat64) -> (BountyResult);
@@ -113,7 +117,7 @@ service : {
       bool,
       nat64,
       text,
-    ) -> ();
+    ) -> (ResultText);
   upload_art_with_principal : (
       text,
       text,
