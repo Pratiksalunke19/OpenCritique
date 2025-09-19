@@ -5,7 +5,7 @@ use candid::{CandidType, Principal};
 use ic_ledger_types::*;
 
 /* for testing purpose */
-const LOCAL_TESTING: bool = true; // Set to false for production
+const LOCAL_TESTING: bool = false; // Set to false for production
 
 const ICP_FEE: u64 = 10_000; // 0.0001 ICP in e8s
 

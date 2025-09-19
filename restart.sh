@@ -87,12 +87,12 @@ dfx canister call opencritique_backend upload_art \
   "bafkreigdcc2zfp3vqb4ggjhvojadxreq7uum4mxl3dsvxqlyowkvhdakeq",
   "Alice", "alice@example.com",
   vec { "space"; "nebula"; "abstract" },
-  0,
+  1,
   "CC-BY",
   opt "image",
   opt "image/png",
   null,
-  true,
+  false,
   1,
   ""
 )'
@@ -249,5 +249,9 @@ dfx canister call opencritique_backend upload_art \
   0,
   "lindh-o3lck-kpmvk-mvlhp-k5poe-raipw-fa65l-24cnv-ht54i-j53ic-sqe"
 )'
+
+#funding artwork1
+export ESCROW=$(dfx canister call opencritique_backend get_artwork_escrow_account '(1)' | grep -o '"[^"]*"' | tr -d '"')
+dfx ledger transfer --ledger-canister-id bkyz2-fmaaa-aaaaa-qaaaq-cai     --amount 1.0     --fee 0     --memo 1     $ESCROW
 
 # log "✅ All sample artworks uploaded successfully!"
