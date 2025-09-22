@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useArtContext } from "./context/ArtContext";
-import { useUserContext } from "./context/UserContext"; // Add this import
+import { useUserContext } from "./context/UserContext";
 import { uploadToPinata } from "../services/pinataUpload";
 import { opencritique_backend } from "../../../declarations/opencritique_backend";
 
 const UploadForm = () => {
   const { fetchArtworks } = useArtContext();
-  const { isConnected, principal, principalObj, connectWallet, actor } =
-    useUserContext(); // Add this
+  const { isConnected, principal, principalObj, connectWallet } =
+    useUserContext();
   const [loading, setLoading] = useState(false);
-
+  const [uploadStatus, setUploadStatus] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,9 +45,84 @@ const UploadForm = () => {
     e.preventDefault();
   };
 
+  // Fund bounty escrow account
+  const fundBountyEscrow = async (artworkId, bountyAmount) => {
+    try {
+      setUploadStatus("Getting escrow account...");
+
+      // Get escrow account for the artwork
+      const escrowResult =
+        await opencritique_backend.get_artwork_escrow_account(artworkId);
+      let escrowAccount;
+      if (escrowResult.Ok) {
+        escrowAccount = escrowResult.Ok;
+      } else {
+        throw new Error(
+          `Failed to get escrow account: ${escrowResult.Err || "Unknown error"}`
+        );
+      }
+
+      console.log("Escrow account:", escrowAccount);
+
+      setUploadStatus("Requesting transfer approval...");
+
+      // Convert ICP to e8s (1 ICP = 100,000,000 e8s)
+      const amountE8s = Math.floor(parseFloat(bountyAmount) * 100000000);
+
+      // ✅ FIX 1: Proper host configuration for requestTransfer
+      const host =
+        process.env.NODE_ENV === "development"
+          ? "http://localhost:4943"
+          : "https://ic0.app";
+
+      // ✅ FIX 2: Ensure agent is properly configured with correct host
+      if (!window.ic.plug.agent || window.ic.plug.agent._host !== host) {
+        console.log("Reconfiguring Plug agent for transfer...");
+        await window.ic.plug.requestConnect({
+          whitelist: [
+            "be2us-64aaa-aaaaa-qaabq-cai",
+            "bkyz2-fmaaa-aaaaa-qaaaq-cai",
+          ], // Add ledger canister
+          host: host,
+        });
+      }
+
+      // ✅ FIX 3: Simplified requestTransfer parameters
+      const transferParams = {
+        to: escrowAccount,
+        amount: amountE8s,
+      };
+
+      console.log("Transfer parameters:", transferParams);
+      console.log("Using host:", host);
+      console.log("Agent host:", window.ic.plug.agent._host);
+
+      // This will show Plug wallet popup for user approval
+      const transferResult = await window.ic.plug.requestTransfer(
+        transferParams
+      );
+      console.log("Transfer successful:", transferResult);
+
+      setUploadStatus("Verifying bounty funding...");
+
+      // Wait a moment for blockchain confirmation
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // Verify the bounty balance
+      const balance = await opencritique_backend.get_bounty_balance(artworkId);
+      console.log("Bounty balance after funding:", balance);
+
+      return transferResult;
+    } catch (error) {
+      console.error("Bounty funding failed:", error);
+      throw new Error(`Bounty funding failed: ${error.message}`);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setUploadStatus("Preparing upload...");
 
     try {
       // Get authenticated principal from Plug
@@ -58,51 +133,104 @@ const UploadForm = () => {
       const plugPrincipal = await window.ic.plug.agent.getPrincipal();
       console.log("Using principal for upload:", plugPrincipal.toString());
 
+      setUploadStatus("Uploading to IPFS...");
+
       // Upload to Pinata
       const cid = await uploadToPinata(formData.artwork);
+      console.log("IPFS CID:", cid);
 
       const bountyInE8s = formData.bounty
         ? Math.floor(parseFloat(formData.bounty) * 100000000)
         : 0;
 
-      // In UploadForm.jsx - call the new function
+      setUploadStatus("Creating artwork on blockchain...");
+
+      // ✅ FIXED: Proper Candid Option<String> formatting
       const result = await opencritique_backend.upload_art_with_principal(
-        formData.title.trim(),
-        formData.description.trim(),
-        cid,
-        formData.anonymous
+        formData.title.trim(), // title: String
+        formData.description.trim(), // description: String
+        cid, // primary_url_or_cid: String
+        formData.anonymous // username: String
           ? "Anonymous"
-          : plugPrincipal.toString().substring(0, 8) + "...",
-        formData.anonymous
+          : `${plugPrincipal.toString().substring(0, 8)}...`,
+        formData.anonymous // email: String
           ? "anonymous@example.com"
           : `${plugPrincipal.toString().substring(0, 8)}@opencritique.com`,
-        formData.tags.split(",").map((tag) => tag.trim()),
-        BigInt(bountyInE8s),
-        formData.license || "MIT",
-        ["image"],
-        ["image/jpeg"],
-        [],
-        !!formData.is_nft,
-        BigInt(
-          formData.nft_price
-            ? Math.floor(parseFloat(formData.nft_price) * 100000000)
-            : 0
-        ),
-        "",
-        plugPrincipal // The new principal parameter
+        formData.tags.split(",").map((tag) => tag.trim()), // tags: Vec<String>
+        bountyInE8s, // feedback_bounty: u64
+        formData.license || "MIT", // license: String
+
+        // ✅ FIX: Option<String> parameters as arrays
+        formData.artwork.type.startsWith("image/") ? ["image"] : [], // media_type: Option<String>
+        formData.artwork.type ? [formData.artwork.type] : [], // mime_type: Option<String>
+        [], // text_excerpt: Option<String> (null)
+
+        formData.is_nft, // is_nft: bool
+        formData.nft_price // nft_price: u64
+          ? Math.floor(parseFloat(formData.nft_price) * 100000000)
+          : 0,
+        "", // nft_buyer: String
+        plugPrincipal // author_principal: Principal
       );
 
       console.log("✅ Upload successful with explicit principal!");
 
-      await fetchArtworks();
-      alert("Artwork uploaded successfully!");
+      // Get the artwork ID from the result or fetch latest
+      const artworks =
+        await opencritique_backend.get_my_artworks_using_principal(
+          plugPrincipal
+        );
+      const latestArtwork = artworks[artworks.length - 1];
+      const artworkId = latestArtwork.id;
 
-      // Reset form...
+      console.log("Created artwork with ID:", artworkId);
+
+      // ✅ NEW: Auto-fund bounty if specified
+      if (formData.bounty && parseFloat(formData.bounty) > 0) {
+        setUploadStatus("Funding bounty escrow...");
+
+        try {
+          await fundBountyEscrow(artworkId, formData.bounty);
+          setUploadStatus("Bounty funded successfully!");
+        } catch (bountyError) {
+          console.warn(
+            "Artwork uploaded but bounty funding failed:",
+            bountyError
+          );
+          alert(
+            `Artwork uploaded successfully, but bounty funding failed: ${bountyError.message}\n\nYou can fund the bounty later from the artwork details page.`
+          );
+        }
+      }
+
+      await fetchArtworks();
+      setUploadStatus("Upload complete!");
+
+      alert(
+        formData.bounty
+          ? `Artwork uploaded and bounty of ${formData.bounty} ICP funded successfully!`
+          : "Artwork uploaded successfully!"
+      );
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        tags: "",
+        bounty: "",
+        license: "",
+        anonymous: false,
+        artwork: null,
+        is_nft: false,
+        nft_price: "",
+      });
     } catch (error) {
-      console.error(" Upload failed:", error);
+      console.error("❌ Upload failed:", error);
+      setUploadStatus("");
       alert(`Upload failed: ${error.message}`);
     } finally {
       setLoading(false);
+      setUploadStatus("");
     }
   };
 
@@ -144,6 +272,34 @@ const UploadForm = () => {
                   Principal: {principal?.substring(0, 16)}...
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Status Indicator */}
+        {loading && uploadStatus && (
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <svg
+                className="animate-spin h-5 w-5 text-blue-500"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              <p className="text-foreground font-medium">{uploadStatus}</p>
             </div>
           </div>
         )}
@@ -242,10 +398,15 @@ const UploadForm = () => {
               className="w-full p-3 rounded-lg bg-background border border-input text-foreground focus:ring-2 focus:ring-primary focus:outline-none transition"
             />
             {formData.bounty && (
-              <p className="text-xs text-muted-foreground mt-1">
-                ≈ {(parseFloat(formData.bounty) * 100000000).toLocaleString()}{" "}
-                e8s
-              </p>
+              <div className="mt-1 space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  ≈ {(parseFloat(formData.bounty) * 100000000).toLocaleString()}{" "}
+                  e8s
+                </p>
+                <p className="text-xs text-orange-400">
+                  💰 Bounty will be auto-funded from your Plug wallet
+                </p>
+              </div>
             )}
           </div>
           <input
@@ -277,7 +438,6 @@ const UploadForm = () => {
               ></div>
             </div>
           </label>
-
           {formData.is_nft && (
             <input
               type="number"
@@ -345,25 +505,25 @@ const UploadForm = () => {
                   d="M4 12a8 8 0 018-8v8H4z"
                 />
               </svg>
-              Uploading...
+              {uploadStatus || "Uploading..."}
             </div>
           ) : !isConnected ? (
             "Connect Wallet to Upload"
           ) : (
             `Upload Artwork ${
-              formData.bounty ? `(${formData.bounty} ICP Bounty)` : ""
+              formData.bounty ? `(+ Fund ${formData.bounty} ICP Bounty)` : ""
             }`
           )}
         </button>
 
         {/* Help Text */}
-        <div className="text-center text-muted-foreground text-sm">
+        <div className="text-center text-muted-foreground text-sm space-y-1">
           <p>Your artwork will be stored on IPFS via Pinata</p>
-          {/* {formData.bounty && (
-            // <p className="text-orange-400 mt-1">
-            //   💡 Remember to fund your bounty escrow account after upload
-            // </p>
-          )} */}
+          {formData.bounty && (
+            <p className="text-orange-400">
+              💡 Bounty will be automatically funded via Plug wallet approval
+            </p>
+          )}
         </div>
       </form>
     </div>

@@ -255,3 +255,25 @@ export ESCROW=$(dfx canister call opencritique_backend get_artwork_escrow_accoun
 dfx ledger transfer --ledger-canister-id bkyz2-fmaaa-aaaaa-qaaaq-cai     --amount 1.0     --fee 0     --memo 1     $ESCROW
 
 # log "✅ All sample artworks uploaded successfully!"
+
+# # Upload artwork with bounty ✅
+# # Fund escrow account ✅ 
+# dfx ledger transfer --amount 1.0 --fee 0 --memo 1 [escrow_account]
+# # Result: Transfer sent at BlockHeight: 1
+
+# # Check balance ✅
+# dfx canister call opencritique_backend get_bounty_balance '(1)'
+# # Result: "Balance: 1 ICP (100000000 e8s)"
+
+# # Transfer bounty to critic ✅
+# dfx canister call opencritique_backend transfer_bounty_to_critic "(1, principal \"mu7ba-6vje6-...\", 50000000)"
+# # Result: "Successfully transferred 0.5 ICP to critic... Block index: 2"
+
+# # Verify critic received ICP ✅
+# dfx ledger balance --ledger-canister-id bkyz2-fmaaa-aaaaa-qaaaq-cai
+# # Result: 0.50000000 ICP
+
+# # Verify remaining escrow balance ✅
+# dfx canister call opencritique_backend get_bounty_balance '(1)'  
+# # Result: "Balance: 0.4999 ICP (49990000 e8s)" (after fee deduction)
+

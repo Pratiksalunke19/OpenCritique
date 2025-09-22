@@ -87,7 +87,7 @@ function App() {
           <Route path="/trending" element={<Welcome />} />
           <Route path="/upload" element={<UploadForm />} />
           <Route path="/art/:id" element={<ArtCardDetail />} />
-          <Route path="/mystudio" element={<MyStudio />} />
+          <Route path="/mystudio" element={<Profile />} />
           <Route path="/marketplace" element={<MarketPlaceWithPadding />} />
           <Route path="/nft/:id" element={<NFTArtCard />} />
           <Route path="/artwork/:id" element={<ArtCardDetail />} />

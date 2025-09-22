@@ -90,13 +90,6 @@ const Footer = () => {
               </ul>
             </div>
           </div>
-
-          {/* Tagline */}
-          <div className="lg:col-span-2 flex items-start">
-            <div className="text-sm text-muted-foreground">
-              Built with ❤️ for artists
-            </div>
-          </div>
         </div>
 
         <div className="border-t border-border mt-8 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">

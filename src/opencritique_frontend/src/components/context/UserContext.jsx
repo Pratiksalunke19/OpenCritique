@@ -41,7 +41,7 @@ export const UserProvider = ({ children }) => {
         return false;
       }
 
-      const whitelist = ["be2us-64aaa-aaaaa-qaabq-cai"];
+      const whitelist = ["be2us-64aaa-aaaaa-qaabq-cai","bkyz2-fmaaa-aaaaa-qaaaq-cai"];
       
       // Add host configuration for local development
       const host = process.env.NODE_ENV === "development" 
