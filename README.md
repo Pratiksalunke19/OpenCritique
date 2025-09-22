@@ -2,6 +2,12 @@
 
 OpenCritique is a decentralized Web3 platform built on the Internet Computer (ICP) where artists upload works-in-progress (WIPs) and receive constructive feedback from the community. Critics are rewarded for detailed, helpful comments using a transparent, on-chain reputation and token system.
 
+Latest Changes :
+-  Transfer Bounty mechanism functional
+-  User personalization updated
+-  Escrow account for Artwork
+-  Funding separation for each artwork escrow account
+
 Our Aim : 
 -  Foster a decentralized platform for art critique and curation.
 -  Empower artists to receive meaningful feedback from the community.
@@ -9,7 +15,7 @@ Our Aim :
 -  Establish a fair and democratic system for artwork discovery through DAO governance.
 -  Build a censorship-resistant space where art and opinions thrive freely.
 
-[Demo video Youtube ](https://youtu.be/phHrBfoIAPQ)
+[Demo video Youtube ](https://youtu.be/rynAFOC73PE)
 
 # Setup (For local ICP blockchain)
 
