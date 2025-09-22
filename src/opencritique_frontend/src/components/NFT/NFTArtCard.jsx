@@ -2,6 +2,8 @@ import React from "react";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useArtContext } from "../context/ArtContext";
+import { useUserContext } from "../context/UserContext"; // Add this import
+import { supabase } from "../../lib/supabaseClient"; // Add Supabase import
 import {
   ArrowLeft,
   Heart,
@@ -21,8 +23,10 @@ const NFTArtCard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { artworks } = useArtContext();
+  const { isConnected, principal } = useUserContext(); // Add user context
 
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false); // Loading state for purchase
 
   const artwork = artworks.find(
     (art) => art.id.toString() === id && art.is_nft === true
@@ -64,7 +68,7 @@ const NFTArtCard = () => {
     nft_buyer
   } = artwork;
 
-   // Check if NFT is sold
+  // Check if NFT is sold
   const isSold = nft_buyer && nft_buyer !== "" && nft_buyer !== "0";
 
   // Fixed formatDate function to handle BigInt
@@ -91,18 +95,134 @@ const NFTArtCard = () => {
     }
   };
 
+  // 🔥 NEW: Add purchased NFT to Supabase
+  const addPurchasedNFTToProfile = async (nftId) => {
+    if (!isConnected || !principal) {
+      console.warn('User not connected, cannot save purchase');
+      return;
+    }
+
+    try {
+      console.log('💎 Adding purchased NFT to profile:', { principal, nftId });
+
+      // Use the database function to add purchased NFT
+      const { error } = await supabase.rpc('add_purchased_nft', {
+        user_principal: principal,
+        nft_id: parseInt(nftId)
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ Successfully added NFT to purchased list');
+
+      // Optional: Update user's NFT purchase count
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          updated_at: new Date().toISOString()
+        })
+        .eq('principal', principal);
+
+      if (updateError) {
+        console.warn('Failed to update profile timestamp:', updateError);
+      }
+
+    } catch (error) {
+      console.error('❌ Error adding purchased NFT to profile:', error);
+      // Don't throw the error to avoid breaking the purchase flow
+      // The purchase was successful, saving to profile is secondary
+    }
+  };
+
+  // 🔥 NEW: Mock purchase transaction with Supabase integration
+  const performMockPurchase = async (artwork) => {
+    setIsPurchasing(true);
+
+    try {
+      console.log('🛒 Starting mock purchase for NFT:', artwork.id);
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Mock transaction - in real implementation, this would involve:
+      // 1. Actual ICP transfer via Plug wallet
+      // 2. Backend canister call to update NFT ownership
+      // 3. Blockchain transaction confirmation
+
+      const mockTransactionResult = {
+        success: true,
+        transactionId: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        blockHeight: Math.floor(Math.random() * 1000000),
+        timestamp: Date.now(),
+        amount: artwork.nft_price,
+        buyer: principal,
+        seller: artwork.author
+      };
+
+      console.log('💳 Mock transaction completed:', mockTransactionResult);
+
+      // 🔥 CRITICAL: Add to purchased NFTs in Supabase
+      await addPurchasedNFTToProfile(artwork.id);
+
+      return mockTransactionResult;
+
+    } catch (error) {
+      console.error('❌ Mock purchase failed:', error);
+      throw new Error(`Purchase failed: ${error.message}`);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
   // Update the handlePurchase function
   const handlePurchase = () => {
+    if (!isConnected) {
+      alert('Please connect your wallet to purchase NFTs');
+      return;
+    }
+
+    if (isSold) {
+      alert('This NFT has already been sold');
+      return;
+    }
+
     setShowPurchaseModal(true);
   };
 
-  const handlePurchaseSuccess = (purchasedArtwork) => {
-    // TODO: Update the artwork with buyer information
-    console.log("NFT purchased:", purchasedArtwork);
-    setShowPurchaseModal(false);
+  // 🔥 ENHANCED: Handle purchase success with Supabase integration
+  const handlePurchaseSuccess = async (purchasedArtwork) => {
+    try {
+      console.log("🎉 NFT purchase initiated:", purchasedArtwork.title);
 
-    // Optional: Show success toast or redirect
-    alert(`Successfully purchased ${purchasedArtwork.title}!`);
+      // Perform the mock purchase transaction
+      const transactionResult = await performMockPurchase(purchasedArtwork);
+
+      // Close modal first
+      setShowPurchaseModal(false);
+
+      // Show success message with transaction details
+      const successMessage = `
+🎉 Successfully purchased "${purchasedArtwork.title}"!
+
+Transaction Details:
+• Transaction ID: ${transactionResult.transactionId}
+• Block Height: ${transactionResult.blockHeight}
+• Amount: ${purchasedArtwork.nft_price} ICP
+
+The NFT has been added to your collection and will appear in your "My Studio" purchased NFTs section.
+      `.trim();
+
+      alert(successMessage);
+
+      // Optional: Navigate to user's collection
+      // navigate('/profile?tab=purchased');
+
+    } catch (error) {
+      console.error('❌ Purchase failed:', error);
+      alert(`Purchase failed: ${error.message}`);
+    }
   };
 
   const handleContactArtist = () => {
@@ -127,14 +247,13 @@ const NFTArtCard = () => {
             <ArrowLeft size={20} />
             <span>Back to Marketplace</span>
           </button>
-          <div className="flex items-center gap-3">
-            <button className="p-2 text-gray-600 hover:text-red-500 transition-colors">
-              <Heart size={20} />
-            </button>
-            <button className="p-2 text-gray-600 hover:text-blue-500 transition-colors">
-              <Share2 size={20} />
-            </button>
-          </div>
+
+          {/* 🔥 NEW: Connection status indicator */}
+          {!isConnected && (
+            <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+              Connect wallet to purchase
+            </div>
+          )}
         </div>
       </div>
 
@@ -143,8 +262,6 @@ const NFTArtCard = () => {
           {/* Left Side - Image */}
           <div className="space-y-4">
             <div className="bg-card rounded-2xl p-4 shadow-sm relative">
-              {" "}
-              {/* Add 'relative' here */}
               <img
                 src={`${ipfsBase}${image_url}`}
                 alt={title}
@@ -152,11 +269,21 @@ const NFTArtCard = () => {
                   isSold ? "opacity-75" : ""
                 }`}
               />
-              {/* Sold Out Overlay - Move inside the image container */}
+              {/* Sold Out Overlay */}
               {isSold && (
                 <div className="absolute inset-4 bg-black bg-opacity-50 rounded-xl flex items-center justify-center">
                   <div className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold text-xl transform -rotate-12 shadow-lg">
                     SOLD OUT
+                  </div>
+                </div>
+              )}
+
+              {/* 🔥 NEW: Processing overlay during purchase */}
+              {isPurchasing && (
+                <div className="absolute inset-4 bg-blue-500 bg-opacity-75 rounded-xl flex items-center justify-center">
+                  <div className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold text-lg shadow-lg flex items-center gap-3">
+                    <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    PROCESSING PURCHASE...
                   </div>
                 </div>
               )}
@@ -218,7 +345,7 @@ const NFTArtCard = () => {
 
               {/* Tags */}
               {tags && tags.length > 0 && (
-                <div className="mb-6 ">
+                <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
                     <Tag size={16} className="text-gray-500" />
                     <span className="text-sm text-gray-500">Tags</span>
@@ -238,7 +365,7 @@ const NFTArtCard = () => {
             </div>
 
             {/* Purchase Section */}
-            <div className="bg-card rounded-2xl p-6 shadow-sm ">
+            <div className="bg-card rounded-2xl p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Banknote size={20} className="text-green-500" />
                 <span className="text-lg font-semibold text-gray-600">
@@ -259,20 +386,43 @@ const NFTArtCard = () => {
               <div className="space-y-3">
                 <button
                   onClick={handlePurchase}
-                  className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                  disabled={isSold || isPurchasing || !isConnected}
+                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors flex items-center justify-center gap-2 shadow-lg ${
+                    isSold
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : isPurchasing
+                      ? 'bg-blue-400 text-white cursor-not-allowed'
+                      : !isConnected
+                      ? 'bg-orange-500 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  <ShoppingCart size={20} />
-                  Buy Now
+                  {isPurchasing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : isSold ? (
+                    'Sold Out'
+                  ) : !isConnected ? (
+                    'Connect Wallet'
+                  ) : (
+                    <>
+                      <ShoppingCart size={20} />
+                      Buy Now
+                    </>
+                  )}
                 </button>
 
-                {email && email !== "N/A" && (
+                {/* {email && email !== "N/A" && (
                   <button
                     onClick={handleContactArtist}
-                    className="w-full border-2 border-border text-gray-700 py-3 rounded-xl font-semibold hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                    disabled={isPurchasing}
+                    className="w-full border-2 border-border text-gray-700 py-3 rounded-xl font-semibold hover:border-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     Contact Artist
                   </button>
-                )}
+                )} */}
               </div>
 
               <div className="mt-6 p-4 bg-card border-2 border-border rounded-xl">
@@ -287,6 +437,23 @@ const NFTArtCard = () => {
                   </span>
                 </div>
               </div>
+
+              {/* 🔥 NEW: Purchase status messages */}
+              {!isConnected && (
+                <div className="mt-4 p-3 bg-orange-100 border border-orange-300 rounded-lg">
+                  <p className="text-orange-800 text-sm text-center">
+                    Please connect your Plug wallet to purchase this NFT
+                  </p>
+                </div>
+              )}
+
+              {isPurchasing && (
+                <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                  <p className="text-blue-800 text-sm text-center">
+                    Processing your purchase... Please wait.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Additional Info */}

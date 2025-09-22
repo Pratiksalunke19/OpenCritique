@@ -63,11 +63,6 @@ const HowItWorksSection = () => {
                 <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
                   {index + 1}
                 </div>
-                
-                {/* Icon */}
-                <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center text-xl animate-float">
-                  {step.icon}
-                </div>
               </div>
               
               {/* Content */}

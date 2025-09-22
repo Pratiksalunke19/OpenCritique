@@ -619,5 +619,30 @@ fn mint_nft(artwork_id: u64, nft_price: u64) -> Result<String, String> {
 
 /**************************************************************/
 
+#[query]
+fn get_artwork_by_id(id: u64) -> Vec<Artwork> {
+    ARTWORKS.with(|artworks| {
+        artworks.borrow()
+            .iter()
+            .filter(|artwork| artwork.id == id)
+            .cloned()
+            .collect()
+    })
+}
+
+// Optional: Batch function for better performance
+#[query]
+fn get_artworks_by_ids(ids: Vec<u64>) -> Vec<Artwork> {
+    ARTWORKS.with(|artworks| {
+        let artwork_list = artworks.borrow();
+        ids.into_iter()
+            .filter_map(|id| {
+                artwork_list.iter().find(|artwork| artwork.id == id).cloned()
+            })
+            .collect()
+    })
+}
+
+
 // Enable Candid export
 ic_cdk::export_candid!();

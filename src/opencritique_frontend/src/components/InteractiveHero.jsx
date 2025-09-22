@@ -149,7 +149,6 @@ const InteractiveHero = () => {
               )}
               onClick={handleConnectWallet}
             >
-              <span className="mr-2">👛</span>
               Connect Wallet to Start
               <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
             </button>
@@ -162,7 +161,6 @@ const InteractiveHero = () => {
               )}
               onClick={handleExplore}
             >
-              <span className="mr-2">✨</span>
               Explore Trending
             </button>
           </div>

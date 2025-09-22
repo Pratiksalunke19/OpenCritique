@@ -3,27 +3,157 @@ import { useNavigate } from "react-router-dom";
 import MyStudioArtCard from "./MyStudioArtCard";
 import { useArtContext } from "./context/ArtContext";
 import { useUserContext } from "./context/UserContext";
+import { supabase } from "../lib/supabaseClient";
+import { opencritique_backend } from "../../../declarations/opencritique_backend";
 
-const MyStudio = () => {
+const MyStudio = ({ userProfile, updateProfile, likedArtworkIds = [], purchasedNftIds = [] }) => {
   const navigate = useNavigate();
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("created");
-  const [displayCount, setDisplayCount] = useState(12); // Show 12 items initially
+  const [displayCount, setDisplayCount] = useState(12);
 
   const { myArtworks, fetchMyArtworks, loadingMyArts } = useArtContext();
   const { isConnected, principal } = useUserContext();
 
-  // Mock data for liked and purchased NFTs (replace with real API calls)
+  // State for liked artworks and purchased NFTs
   const [likedArtworks, setLikedArtworks] = useState([]);
   const [purchasedNFTs, setPurchasedNFTs] = useState([]);
   const [loadingLiked, setLoadingLiked] = useState(false);
   const [loadingPurchased, setLoadingPurchased] = useState(false);
 
+  // 🔥 CRITICAL FIX: BigInt conversion utilities
+  const safeBigIntToNumber = (value) => {
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+    if (typeof value === 'string') {
+      return parseFloat(value) || 0;
+    }
+    return value || 0;
+  };
+
+  const convertArtworkBigInts = (artwork) => {
+    if (!artwork) return artwork;
+    
+    return {
+      ...artwork,
+      id: safeBigIntToNumber(artwork.id),
+      feedback_bounty: safeBigIntToNumber(artwork.feedback_bounty),
+      nft_price: safeBigIntToNumber(artwork.nft_price),
+      created_at_ns: safeBigIntToNumber(artwork.created_at_ns),
+      // Convert any other BigInt fields as needed
+    };
+  };
+
   // Navigate to artwork details
   const handleArtworkClick = (artId) => {
     navigate(`/art/${artId}`);
   };
+
+  // 🔥 FIXED: Fetch liked artworks with BigInt handling
+  const fetchLikedArtworks = useCallback(async () => {
+    if (!isConnected || !principal) return;
+    
+    setLoadingLiked(true);
+    try {
+      // Get user profile to get liked artwork IDs
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('liked_artwork_ids')
+        .eq('principal', principal)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      const likedIds = profileData?.liked_artwork_ids || [];
+      console.log('Liked artwork IDs:', likedIds);
+
+      if (likedIds.length === 0) {
+        setLikedArtworks([]);
+        return;
+      }
+
+      // Fetch artwork details from backend canister
+      const likedArtworksData = [];
+      
+      for (const artworkId of likedIds) {
+        try {
+          const artwork = await opencritique_backend.get_artwork_by_id(artworkId);
+          if (artwork && artwork.length > 0) {
+            // 🔥 CRITICAL: Convert BigInt values before storing
+            const convertedArtwork = convertArtworkBigInts(artwork[0]);
+            likedArtworksData.push(convertedArtwork);
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch artwork ${artworkId}:`, error);
+        }
+      }
+
+      setLikedArtworks(likedArtworksData);
+      console.log('✅ Fetched liked artworks:', likedArtworksData.length);
+
+    } catch (error) {
+      console.error("Error fetching liked artworks:", error);
+      setLikedArtworks([]);
+    } finally {
+      setLoadingLiked(false);
+    }
+  }, [isConnected, principal]);
+
+  // 🔥 FIXED: Fetch purchased NFTs with BigInt handling
+  const fetchPurchasedNFTs = useCallback(async () => {
+    if (!isConnected || !principal) return;
+    
+    setLoadingPurchased(true);
+    try {
+      // Get user profile to get purchased NFT IDs
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('purchased_nft_ids')
+        .eq('principal', principal)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      const purchasedIds = profileData?.purchased_nft_ids || [];
+      console.log('Purchased NFT IDs:', purchasedIds);
+
+      if (purchasedIds.length === 0) {
+        setPurchasedNFTs([]);
+        return;
+      }
+
+      // Fetch NFT details from backend canister
+      const purchasedNFTsData = [];
+      
+      for (const nftId of purchasedIds) {
+        try {
+          const nft = await opencritique_backend.get_artwork_by_id(nftId);
+          if (nft && nft.length > 0 && nft[0].is_nft === true) {
+            // 🔥 CRITICAL: Convert BigInt values before storing
+            const convertedNFT = convertArtworkBigInts(nft[0]);
+            purchasedNFTsData.push(convertedNFT);
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch NFT ${nftId}:`, error);
+        }
+      }
+
+      setPurchasedNFTs(purchasedNFTsData);
+      console.log('✅ Fetched purchased NFTs:', purchasedNFTsData.length);
+
+    } catch (error) {
+      console.error("Error fetching purchased NFTs:", error);
+      setPurchasedNFTs([]);
+    } finally {
+      setLoadingPurchased(false);
+    }
+  }, [isConnected, principal]);
 
   // Tab configuration
   const tabs = [
@@ -54,48 +184,6 @@ const MyStudio = () => {
   const currentData = currentTab?.data || [];
   const displayedItems = currentData.slice(0, displayCount);
   const hasMore = currentData.length > displayCount;
-
-  // Fetch liked artworks
-  const fetchLikedArtworks = useCallback(async () => {
-    if (!isConnected || !principal) return;
-    
-    setLoadingLiked(true);
-    try {
-      // Replace with your actual API call
-      // const liked = await opencritique_backend.get_liked_artworks(principal);
-      // setLikedArtworks(liked);
-      
-      // Mock data for now
-      setLikedArtworks([
-        // Add mock liked artworks here
-      ]);
-    } catch (error) {
-      console.error("Error fetching liked artworks:", error);
-    } finally {
-      setLoadingLiked(false);
-    }
-  }, [isConnected, principal]);
-
-  // Fetch purchased NFTs
-  const fetchPurchasedNFTs = useCallback(async () => {
-    if (!isConnected || !principal) return;
-    
-    setLoadingPurchased(true);
-    try {
-      // Replace with your actual API call
-      // const purchased = await opencritique_backend.get_purchased_nfts(principal);
-      // setPurchasedNFTs(purchased);
-      
-      // Mock data for now
-      setPurchasedNFTs([
-        // Add mock purchased NFTs here
-      ]);
-    } catch (error) {
-      console.error("Error fetching purchased NFTs:", error);
-    } finally {
-      setLoadingPurchased(false);
-    }
-  }, [isConnected, principal]);
 
   // Initialize MyStudio
   const initializeMyStudio = useCallback(async () => {
@@ -128,7 +216,7 @@ const MyStudio = () => {
   useEffect(() => {
     if (!isConnected || !principal) {
       setIsInitialized(false);
-      setDisplayCount(12); // Reset display count
+      setDisplayCount(12);
     }
   }, [isConnected, principal]);
 
@@ -245,62 +333,67 @@ const MyStudio = () => {
           <>
             {/* Artworks Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {displayedItems.map((art, index) => (
-                <div
-                  key={`${activeTab}-${art.id}-${index}`}
-                  className="group relative bg-card/50 backdrop-blur border border-border rounded-2xl overflow-hidden hover:bg-card/70 transition-all duration-300"
-                >
-                  {/* Image */}
-                  <div 
-                    className="aspect-square relative overflow-hidden cursor-pointer" 
-                    onClick={() => handleArtworkClick(art.id)}
+              {displayedItems.map((art, index) => {
+                // 🔥 CRITICAL FIX: Ensure artwork data is properly converted before rendering
+                const safeArt = convertArtworkBigInts(art);
+                
+                return (
+                  <div
+                    key={`${activeTab}-${safeArt.id}-${index}`}
+                    className="group relative bg-card/50 backdrop-blur border border-border rounded-2xl overflow-hidden hover:bg-card/70 transition-all duration-300"
                   >
-                    <img
-                      src={`${ipfsBase}${art.image_url}`}
-                      alt={art.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    
-                    {/* Status badges */}
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      {art.is_nft && (
-                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-md text-xs font-medium">
-                          NFT
-                        </span>
-                      )}
-                      {art.feedback_bounty > 0 && (
-                        <span className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white px-2 py-1 rounded-md text-xs font-medium">
-                          💰 Bounty
-                        </span>
-                      )}
+                    {/* Image */}
+                    <div 
+                      className="aspect-square relative overflow-hidden cursor-pointer" 
+                      onClick={() => handleArtworkClick(safeArt.id)}
+                    >
+                      <img
+                        src={`${ipfsBase}${safeArt.image_url}`}
+                        alt={safeArt.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      
+                      {/* Status badges */}
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        {safeArt.is_nft && (
+                          <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-md text-xs font-medium">
+                            NFT
+                          </span>
+                        )}
+                        {safeArt.feedback_bounty > 0 && (
+                          <span className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white px-2 py-1 rounded-md text-xs font-medium">
+                            💰 Bounty
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-4 space-y-2">
-                    <h3 className="font-semibold text-foreground truncate">
-                      {art.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {art.description}
-                    </p>
-                    
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-                      <span className="flex items-center gap-1">
-                        <span>💬</span>
-                        {art.critiques?.length || 0}
-                      </span>
-                      {art.is_nft && art.nft_price > 0 && (
-                        <span className="font-medium text-primary">
-                          {(art.nft_price / 100000000).toFixed(3)} ICP
+                    {/* Content */}
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {safeArt.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {safeArt.description}
+                      </p>
+                      
+                      {/* Stats */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+                        <span className="flex items-center gap-1">
+                          <span>💬</span>
+                          {safeArt.critiques?.length || 0}
                         </span>
-                      )}
+                        {safeArt.is_nft && safeArt.nft_price > 0 && (
+                          <span className="font-medium text-primary">
+                            {(safeArt.nft_price / 100000000).toFixed(3)} ICP
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Load More Button */}

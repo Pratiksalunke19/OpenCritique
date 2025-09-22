@@ -3,14 +3,15 @@ import { useParams } from "react-router-dom";
 import { useArtContext } from "./context/ArtContext";
 import { useState } from "react";
 import { opencritique_backend } from "../../../declarations/opencritique_backend";
-import { ThumbsUp, Gift, X } from "lucide-react";
+import { ThumbsUp, Gift, X, Heart } from "lucide-react";
 import { useUserContext } from "./context/UserContext";
+import { supabase } from "../lib/supabaseClient"; // Add Supabase import
 
 const ArtCardDetail = () => {
   const ipfsBase = "https://gateway.pinata.cloud/ipfs/";
   const { id } = useParams();
   const { artworks } = useArtContext();
-  const { user } = useUserContext();
+  const { user, isConnected, principal } = useUserContext();
 
   // State variables
   const [critiqueText, setCritiqueText] = useState("");
@@ -22,6 +23,11 @@ const ArtCardDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRewarding, setIsRewarding] = useState(false);
   const [hoveredCritiqueId, setHoveredCritiqueId] = useState(null);
+
+  // 🔥 NEW: Like functionality state
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
   // 🔥 NEW: Critical state additions for proper authentication
   const [userPrincipal, setUserPrincipal] = useState(null);
@@ -45,6 +51,122 @@ const ArtCardDetail = () => {
     };
     getUserPrincipal();
   }, []);
+
+  // 🔥 NEW: Check if artwork is liked by current user
+  React.useEffect(() => {
+    const checkLikeStatus = async () => {
+      if (!isConnected || !principal || !artwork) return;
+
+      try {
+        // Get user profile to check liked artworks
+        const { data: profileData, error } = await supabase
+          .from("profiles")
+          .select("liked_artwork_cids")
+          .eq("principal", principal)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error checking like status:", error);
+          return;
+        }
+
+        if (profileData?.liked_artwork_cids) {
+          const isCurrentlyLiked = profileData.liked_artwork_cids.includes(
+            artwork.image_url
+          );
+          setIsLiked(isCurrentlyLiked);
+        }
+
+        // TODO: Get total like count for this artwork from a likes table or counter
+        // For now, we'll use a placeholder
+        setLikeCount(0); // Replace with actual count from database
+      } catch (error) {
+        console.error("Error checking like status:", error);
+      }
+    };
+
+    checkLikeStatus();
+  }, [isConnected, principal, artwork]);
+
+  // 🔥 NEW: Handle like/unlike functionality
+  // 🔥 UPDATED: Handle like/unlike functionality with artwork IDs
+  const handleLike = async () => {
+    if (!isConnected || !principal || !artwork) {
+      alert("Please connect your wallet to like artworks");
+      return;
+    }
+
+    setIsLiking(true);
+
+    try {
+      if (isLiked) {
+        // Unlike the artwork
+        const { error } = await supabase.rpc("remove_liked_artwork", {
+          user_principal: principal,
+          artwork_id: parseInt(artwork.id), // Use artwork ID instead of CID
+        });
+
+        if (error) throw error;
+
+        setIsLiked(false);
+        setLikeCount((prev) => Math.max(0, prev - 1));
+        console.log("✅ Artwork unliked");
+      } else {
+        // Like the artwork
+        const { error } = await supabase.rpc("add_liked_artwork", {
+          user_principal: principal,
+          artwork_id: parseInt(artwork.id), // Use artwork ID instead of CID
+        });
+
+        if (error) throw error;
+
+        setIsLiked(true);
+        setLikeCount((prev) => prev + 1);
+        console.log("✅ Artwork liked");
+      }
+    } catch (error) {
+      console.error("Error updating like status:", error);
+      alert("Failed to update like status. Please try again.");
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  // 🔥 UPDATED: Check if artwork is liked by current user
+  React.useEffect(() => {
+    const checkLikeStatus = async () => {
+      if (!isConnected || !principal || !artwork) return;
+
+      try {
+        // Get user profile to check liked artworks
+        const { data: profileData, error } = await supabase
+          .from("profiles")
+          .select("liked_artwork_ids")
+          .eq("principal", principal)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error checking like status:", error);
+          return;
+        }
+
+        if (profileData?.liked_artwork_ids) {
+          const isCurrentlyLiked = profileData.liked_artwork_ids.includes(
+            parseInt(artwork.id)
+          );
+          setIsLiked(isCurrentlyLiked);
+        }
+
+        // TODO: Get total like count for this artwork from database
+        // You might want to add a separate likes table or counter
+        setLikeCount(0); // Replace with actual count from database
+      } catch (error) {
+        console.error("Error checking like status:", error);
+      }
+    };
+
+    checkLikeStatus();
+  }, [isConnected, principal, artwork]);
 
   // 🔥 NEW: Fetch real-time bounty balance
   React.useEffect(() => {
@@ -214,17 +336,41 @@ const ArtCardDetail = () => {
     <div className="min-h-screen p-6 md:p-10 flex flex-col md:flex-col items-center justify-center bg-background text-foreground animate-fade-in">
       <div className="w-full flex">
         {/* Left side: Artwork Image */}
-        <div className="w-full md:w-1/2 p-4 md:p-6">
-          <img
-            src={`${ipfsBase}${image_url}`}
-            alt={title}
-            className="rounded-2xl shadow-lg w-full object-cover max-h-[600px] border border-border"
-          />
+        <div className="w-full md:w-1/2 p-4 md:p-6 relative">
+          <div className="relative">
+            <img
+              src={`${ipfsBase}${image_url}`}
+              alt={title}
+              className="rounded-2xl shadow-lg w-full object-cover max-h-[600px] border border-border"
+            />
+          </div>
         </div>
 
         {/* Right side: Details */}
         <div className="w-full md:w-1/2 p-4 md:p-6">
-          <div className="bg-card rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 border border-border animate-slide-up">
+          <div className="relative bg-card rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 border border-border animate-slide-up">
+            {/* 🔥 NEW: Like Button in Top Right Corner */}
+            <button
+              onClick={handleLike}
+              disabled={isLiking || !isConnected}
+              className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-sm border transition-all duration-300 group ${
+                isLiked
+                  ? "bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30"
+                  : "bg-black/20 border-white/20 text-white hover:bg-black/40 hover:border-white/40"
+              } ${isLiking ? "scale-95" : "hover:scale-110"} ${
+                !isConnected
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer"
+              }`}
+            >
+              <Heart
+                size={24}
+                className={`transition-all duration-300 ${
+                  isLiked ? "fill-current scale-110" : "group-hover:scale-110"
+                } ${isLiking ? "animate-pulse" : ""}`}
+              />
+            </button>
+
             {/* Header Section */}
             <div className="border-b border-border pb-6">
               <h1 className="text-3xl md:text-4xl font-heading font-bold gradient-text mb-3">
@@ -296,7 +442,9 @@ const ArtCardDetail = () => {
                 <div className="bg-background/40 rounded-xl p-4 border border-border">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-accent">📜</span>
-                    <span className="text-sm text-muted-foreground">License</span>
+                    <span className="text-sm text-muted-foreground">
+                      License
+                    </span>
                   </div>
                   <p className="text-foreground font-medium">{license}</p>
                 </div>
@@ -350,8 +498,17 @@ const ArtCardDetail = () => {
             <div className="bg-background/30 rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Views:</span>
-                  <span className="text-foreground font-medium">-</span>
+                  <Heart
+                    size={16}
+                    className={
+                      isLiked
+                        ? "text-red-400 fill-current"
+                        : "text-muted-foreground"
+                    }
+                  />
+                  <span className="text-foreground font-medium">
+                    {likeCount} {likeCount === 1 ? "like" : "likes"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Critiques:</span>

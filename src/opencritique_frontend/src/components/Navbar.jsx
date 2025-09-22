@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import openCritiqueIcon from "../open_critique_icon.svg";
+import openCritiqueIcon from "../open_critique_icon.png";
 import GooeyNav from "./GooeyNav";
 import { cn } from "../lib/utils";
 
@@ -82,8 +82,7 @@ const Navbar = () => {
               src={openCritiqueIcon}
               alt="OpenCritique Icon"
               className={cn(
-                "w-8 h-8 object-contain transition-all duration-500",
-                scrolled ? "rotate-12 scale-90" : "rotate-0 scale-100"
+                "w-8 h-8 object-contain transition-all duration-500"
               )}
               style={{ minWidth: 24, minHeight: 24 }}
             />

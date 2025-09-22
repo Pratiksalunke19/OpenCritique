@@ -71,9 +71,11 @@ service : {
   delete_artwork : (nat64) -> (ResultText);
   // Get bounty info for a specific artwork
   get_artwork_bounty : (nat64) -> (opt Bounty) query;
+  get_artwork_by_id : (nat64) -> (vec Artwork) query;
   // ✅ NEW: Get escrow account without requiring author parameter (uses artwork data)
   get_artwork_escrow_account : (nat64) -> (ResultText) query;
   get_artworks : () -> (vec Artwork) query;
+  get_artworks_by_ids : (vec nat64) -> (vec Artwork) query;
   // ✅ COMPLETELY FIXED - Get the balance of a bounty escrow account
   get_bounty_balance : (nat64) -> (BountyResult) query;
   // Get bounty escrow account identifier as hex string (for frontend wallet integration)
