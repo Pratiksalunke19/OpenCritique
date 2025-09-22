@@ -92,7 +92,7 @@ dfx canister call opencritique_backend upload_art \
   opt "image",
   opt "image/png",
   null,
-  false,
+  true,
   1,
   ""
 )'

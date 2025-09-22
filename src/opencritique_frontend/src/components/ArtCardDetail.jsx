@@ -36,6 +36,9 @@ const ArtCardDetail = () => {
 
   const artwork = artworks.find((art) => art.id.toString() === id);
 
+  // 🔥 NEW: Reward transfer status
+  const [rewardStatus, setRewardStatus] = useState("");
+
   // 🔥 NEW: Get user principal from Plug wallet
   React.useEffect(() => {
     const getUserPrincipal = async () => {
@@ -88,7 +91,6 @@ const ArtCardDetail = () => {
     checkLikeStatus();
   }, [isConnected, principal, artwork]);
 
-  // 🔥 NEW: Handle like/unlike functionality
   // 🔥 UPDATED: Handle like/unlike functionality with artwork IDs
   const handleLike = async () => {
     if (!isConnected || !principal || !artwork) {
@@ -232,7 +234,59 @@ const ArtCardDetail = () => {
     setRewardAmount(""); // Reset amount
   };
 
-  // 🔥 ENHANCED: Better reward submission with validation and feedback
+  // 🔥 NEW: Direct ICP transfer via Plug wallet (like UploadForm bounty funding)
+  const transferICPDirectly = async (criticPrincipal, amountICP) => {
+    try {
+      setRewardStatus("Requesting transfer approval...");
+
+      // Convert ICP to e8s (1 ICP = 100,000,000 e8s)
+      const amountE8s = Math.floor(parseFloat(amountICP) * 100000000);
+
+      // Configure host for transfer
+      const host = process.env.NODE_ENV === "development" 
+        ? "http://localhost:4943" 
+        : "https://ic0.app";
+
+      // Ensure agent is properly configured
+      if (!window.ic.plug.agent || window.ic.plug.agent._host !== host) {
+        console.log("Reconfiguring Plug agent for transfer...");
+        await window.ic.plug.requestConnect({
+          whitelist: [
+            "be2us-64aaa-aaaaa-qaabq-cai", // Backend canister
+            "bkyz2-fmaaa-aaaaa-qaaaq-cai"  // Local ICP ledger canister
+          ],
+          host: host,
+        });
+      }
+
+      // Prepare transfer parameters
+      const transferParams = {
+        to: criticPrincipal.toString(),
+        amount: amountE8s,
+      };
+
+      console.log("Direct ICP transfer parameters:", transferParams);
+      console.log("Using host:", host);
+
+      setRewardStatus("Confirm transfer in Plug wallet...");
+
+      // This will show Plug wallet popup for user approval
+      const transferResult = await window.ic.plug.requestTransfer(transferParams);
+      console.log("Direct ICP transfer successful:", transferResult);
+
+      setRewardStatus("Transfer completed!");
+      
+      // Wait a moment for blockchain confirmation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      return transferResult;
+    } catch (error) {
+      console.error("Direct ICP transfer failed:", error);
+      throw new Error(`Direct transfer failed: ${error.message}`);
+    }
+  };
+
+  // 🔥 ENHANCED: Reward submission with Plug wallet integration
   const handleRewardSubmit = async () => {
     if (!selectedCritique || !rewardAmount) {
       alert("Please enter a valid reward amount.");
@@ -240,62 +294,80 @@ const ArtCardDetail = () => {
     }
 
     const amount = parseFloat(rewardAmount);
-    const maxAmount = bountyBalance / 100000000;
 
     if (amount <= 0) {
       alert("Please enter a valid amount greater than 0.");
       return;
     }
 
-    if (amount > maxAmount) {
-      alert(
-        `Amount exceeds available bounty balance of ${maxAmount.toFixed(
-          8
-        )} ICP.`
-      );
-      return;
-    }
-
+    // Check if user has enough balance (optional check)
+    const maxBountyAmount = bountyBalance > 0 ? bountyBalance / 100000000 : Infinity;
+    
     try {
       setIsRewarding(true);
-      const amountInE8s = Math.floor(amount * 100000000);
+      setRewardStatus("Initiating reward transfer...");
 
-      console.log("Transferring bounty:", {
+      console.log("🎁 Starting reward transfer:", {
         artworkId: Number(id),
         critic: selectedCritique.critic.toString(),
-        amount: amountInE8s,
+        amount: amount,
+        method: bountyBalance > 0 ? "bounty" : "direct"
       });
 
-      const result = await opencritique_backend.transfer_bounty_to_critic(
-        Number(id),
-        selectedCritique.critic,
-        amountInE8s
-      );
+      let transferResult;
 
-      if (result.Success) {
-        alert(`🎉 Successfully rewarded ${amount} ICP to critic!`);
-
-        // Refresh data
-        fetchCritiques();
-
-        // Update bounty balance
-        const newBalance = await opencritique_backend.get_bounty_balance(
-          Number(id)
+      if (bountyBalance > 0 && amount <= maxBountyAmount) {
+        // 🔥 Option 1: Use bounty escrow system (existing backend method)
+        setRewardStatus("Using bounty escrow...");
+        
+        const amountInE8s = Math.floor(amount * 100000000);
+        const result = await opencritique_backend.transfer_bounty_to_critic(
+          Number(id),
+          selectedCritique.critic,
+          amountInE8s
         );
-        setBountyBalance(Number(newBalance));
 
-        // Close modal and reset
-        setShowRewardModal(false);
-        setRewardAmount("");
-        setSelectedCritique(null);
+        if (!result.Success) {
+          throw new Error(result.Error || "Bounty transfer failed");
+        }
+
+        transferResult = result;
+        console.log("✅ Bounty transfer completed:", result);
+
       } else {
-        alert(`❌ Transfer failed: ${result.Error}`);
+        // 🔥 Option 2: Direct ICP transfer via Plug wallet (new method)
+        setRewardStatus("Processing direct ICP transfer...");
+        
+        transferResult = await transferICPDirectly(selectedCritique.critic, amount);
+        console.log("✅ Direct ICP transfer completed:", transferResult);
       }
+
+      // Success feedback
+      const successMessage = bountyBalance > 0 && amount <= maxBountyAmount
+        ? `🎉 Successfully rewarded ${amount} ICP from bounty escrow!`
+        : `🎉 Successfully sent ${amount} ICP directly to critic!`;
+      
+      alert(successMessage);
+
+      // Refresh data
+      fetchCritiques();
+
+      // Update bounty balance if bounty was used
+      if (bountyBalance > 0) {
+        const newBalance = await opencritique_backend.get_bounty_balance(Number(id));
+        setBountyBalance(Number(newBalance));
+      }
+
+      // Close modal and reset
+      setShowRewardModal(false);
+      setRewardAmount("");
+      setSelectedCritique(null);
+      setRewardStatus("");
+
     } catch (error) {
       console.error("Reward transfer error:", error);
-      alert(
-        "❌ Failed to transfer reward. Please check your connection and try again."
-      );
+      setRewardStatus("");
+      alert(`❌ Reward failed: ${error.message}`);
     } finally {
       setIsRewarding(false);
     }
@@ -582,7 +654,7 @@ const ArtCardDetail = () => {
         </div>
       )}
 
-      {/* 🔥 ENHANCED: Reward Modal with better validation */}
+      {/* 🔥 ENHANCED: Reward Modal with Plug wallet integration */}
       {showRewardModal && selectedCritique && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-card w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border relative">
@@ -604,6 +676,16 @@ const ArtCardDetail = () => {
             </div>
 
             <div className="space-y-4">
+              {/* 🔥 NEW: Transfer method indicator */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-blue-800 text-sm">
+                  {bountyBalance > 0 
+                    ? `💰 Bounty Available: ${(bountyBalance / 100000000).toFixed(6)} ICP`
+                    : "💳 Direct ICP transfer from your wallet"
+                  }
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Reward Amount (ICP)
@@ -612,18 +694,20 @@ const ArtCardDetail = () => {
                   type="number"
                   step="0.00000001"
                   min="0.00000001"
-                  max={(bountyBalance / 100000000).toFixed(8)}
+                  max={bountyBalance > 0 ? (bountyBalance / 100000000).toFixed(8) : undefined}
                   value={rewardAmount}
                   onChange={(e) => setRewardAmount(e.target.value)}
                   className="w-full p-3 rounded-lg bg-background text-foreground border border-input focus:outline-none focus:ring-2 focus:ring-primary transition"
                   placeholder="0.00000001"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Available: {(bountyBalance / 100000000).toFixed(8)} ICP
-                </p>
+                {bountyBalance > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Available in bounty: {(bountyBalance / 100000000).toFixed(8)} ICP
+                  </p>
+                )}
               </div>
 
-              {/* 🔥 ENHANCED: Better quick amount buttons */}
+              {/* Quick amount buttons */}
               <div className="flex gap-2">
                 <button
                   onClick={() => setRewardAmount("0.00000001")}
@@ -631,25 +715,39 @@ const ArtCardDetail = () => {
                 >
                   Min Amount
                 </button>
-                <button
-                  onClick={() =>
-                    setRewardAmount(
-                      ((bountyBalance / 100000000) * 0.1).toFixed(8)
-                    )
-                  }
-                  className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
-                >
-                  10% Bounty
-                </button>
-                <button
-                  onClick={() =>
-                    setRewardAmount((bountyBalance / 100000000).toFixed(8))
-                  }
-                  className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
-                >
-                  Full Bounty
-                </button>
+                {bountyBalance > 0 && (
+                  <>
+                    <button
+                      onClick={() =>
+                        setRewardAmount(
+                          ((bountyBalance / 100000000) * 0.1).toFixed(8)
+                        )
+                      }
+                      className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
+                    >
+                      10% Bounty
+                    </button>
+                    <button
+                      onClick={() =>
+                        setRewardAmount((bountyBalance / 100000000).toFixed(8))
+                      }
+                      className="flex-1 py-2 px-3 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
+                    >
+                      Full Bounty
+                    </button>
+                  </>
+                )}
               </div>
+
+              {/* 🔥 NEW: Transfer status indicator */}
+              {rewardStatus && (
+                <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
+                  <p className="text-blue-800 text-sm flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    {rewardStatus}
+                  </p>
+                </div>
+              )}
 
               <div className="bg-background/50 rounded-lg p-3 border border-border">
                 <p className="text-sm text-foreground">
@@ -662,7 +760,8 @@ const ArtCardDetail = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowRewardModal(false)}
-                  className="flex-1 py-3 px-4 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition"
+                  disabled={isRewarding}
+                  className="flex-1 py-3 px-4 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
